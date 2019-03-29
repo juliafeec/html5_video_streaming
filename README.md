@@ -69,8 +69,11 @@ Also, if you go to `YOUR_EC2_PUBLIC_IP:8080`, you should see the same stream aga
 
 ### Test Locally On Mac
 First you need to install required dependencies
+
 `$conda install ffmpeg=3.4` yes
-`$ffmpeg`, make sure it is 3.4 and using conda ffmpeg
+
+`$ffmpeg` in your terminal
+make sure it is 3.4 or 3.4.x and using conda ffmpeg
 
 Open a new terminal
 
