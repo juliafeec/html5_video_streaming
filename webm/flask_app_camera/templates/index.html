@@ -24,7 +24,7 @@
     <video id="vid" autoplay muted>
       <source src="http://127.0.0.1:8090/pattern.webm">
     </video>
-    <img id="image" src="/static/img.svg" />
+    <img id="image" src='data:image/svg+xml;utf8,<svg baseProfile="full" height="720px" version="1.1" width="1280px" xmlns="http://www.w3.org/2000/svg" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xlink="http://www.w3.org/1999/xlink"><defs /><rect fill="rgb(0,0,0)" fill-opacity="0" height="720px" stroke="green" stroke-width="10" width="1280px" x="0" y="0" /></svg>' />
     <p>
       <button id="copy_button">Screenshot</button>
     <p>
@@ -54,8 +54,14 @@ function overlayImage(){
       $('#image').css("left", left);
       $('#image').css(
           "width", width);
-      $('#image').show();   
-      setTimeout(overlayImage, 500);
+      $('#image').show();  
+      $.get("/svg", function(data, status){
+      //alert("Data: " + data + "\nStatus: " + status);
+      $("#image").attr("src", data);
+      setTimeout(overlayImage, 33);
+      //overlayImage();
+      });
+ 
   }
   
   overlayImage();
