@@ -64,3 +64,29 @@ If that doesn't work, try referring to the docs: https://trac.ffmpeg.org/wiki/Ca
 
 Now if you go to `localhost:5000` you should see the stream. 
 Also, if you go to `YOUR_EC2_PUBLIC_IP:8080`, you should see the same stream again, this time going through AWS.
+
+## Usage
+
+### Test Locally On Mac
+First you need to install required dependencies
+`$conda install ffmpeg=3.4` yes
+`$ffmpeg`, make sure it is 3.4 and using conda ffmpeg
+
+Open a new terminal
+
+`$cd webm/flask_app_camera` folder
+`$ffserver -f ffserver.conf`
+
+Open a new terminal
+`$cd webm/flask_app_camera` folder
+`$./start_ffmpeg.sh`
+
+Open a new terminal
+`$cd webm/flask_app_camera` folder
+
+`$pip install svgwrite`,if you don’t have it
+
+`$python app.py`
+
+Open a new tab in browser
+Go http://localhost:5000
