@@ -142,6 +142,10 @@ On Mac:
 1) Install Redis: `pip install redis`. 
 2) Start/initialize Redis server: `redis-server`
 
-To open a connection to Redis: `redis_db = redis.StrictRedis(host="localhost", port=6379, db=0)` 
-To append a key value pair to Redis storage: `redis_db.set('key', value)`
-To access a value from its key: `redis_db.get('key').
+To open a connection to Redis, append a key value pair to Redis storage and access this value from its key: 
+```
+import redis
+redis_db = redis.StrictRedis(host="localhost", port=6379, db=0)
+redis_db.set('key', value)
+redis_db.get('key')
+``` 
