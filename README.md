@@ -139,8 +139,8 @@ This should open your webcam and show your name when it recognized you
 If you're testing the `https://github.com/juliafeec/html5_video_streaming/tree/master/webm/flask_app_overlay` app, you need to install Redis and start a Redis server.
 
 On Mac: 
-1) Install Redis: `pip install redis`. 
-2) Start/initialize Redis server: `redis-server`
+1) Install Redis: `$ pip install redis`. 
+2) Start/initialize Redis server: `$ redis-server`
 
 To open a connection to Redis, append a key value pair to Redis storage and access this value from its key: 
 ```
