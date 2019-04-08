@@ -93,3 +93,42 @@ Open a new terminal
 
 Open a new tab in browser
 Go http://localhost:5000
+
+
+## Facenet testing
+
+1) Clone the facenet repo https://github.com/davidsandberg/facenet
+
+Also make sure to install their requirements https://github.com/davidsandberg/facenet/blob/master/requirements.txt
+
+2) Change the second line of each notebook in `facenet_temp` to the path where you cloned the above repo + /src
+such as:
+
+`sys.path.append("/home/julia/USF/spring2/productAnalytics/facenet/src")`
+
+3) Download pretrained model weights here https://drive.google.com/open?id=1R77HmFADxe87GmoLwzfgMu_HY0IhcyBz and unzip it so there's a folder named 20180408-102900 inside facenet_temp.
+4) Add everyones photos, make sure you have the below structure:
+
+```
+facenet_temp
+├── 20180408-102900
+│   ├── 20180408-102900.pb
+│   ├── model-20180408-102900.ckpt-90.data-00000-of-00001
+│   ├── model-20180408-102900.ckpt-90.index
+│   └── model-20180408-102900.meta
+├── Align images and create embeddings.ipynb
+├── Facenet recognize frames.ipynb
+└── photos
+    ├── photos_raw
+    │   ├── byron
+    │   │   ├── UNADJUSTEDNONRAW_thumb_243f.png
+...
+```
+
+5) Run everything in `Align images and create embeddings.ipynb`
+
+This should create a pickle file containing everyone's embeddings
+
+6) Run everything in `Facenet recognize frames.ipynb`
+
+This should open your webcam and show your name when it recognized you
