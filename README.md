@@ -28,23 +28,6 @@ This is equivalent to port forwarding port 5000 on the camera server network. An
 
 This connection needs to be kept open the entire time, otherwise the tunneling will stop.
 
-You can only run one of the two versions below at a time.
-
-## Motion JPEG
-
-1 - On the camera server, run `python app.py` inside **motion_jpeg/flask_app_camera**. This will start the server on port 5000.
-
-In the camera server, you can go to `localhost:5000` and you should see the stream.
-
-Make sure the SSH tunneling is running for the remote version to work.
-Now you can go to `YOUR_EC2_PUBLIC_IP:8080` and you should see the same stream again, but this time it's going through AWS so there's some lag.
-
-2 - On AWS, run `python app.py` inside **motion_jpeg/flask_app_camera_ip**. This will start the server on port 5001. 
-
-This app receives the frames from 1, overlays it and resends it.
-
-Now you can go to `YOUR_EC2_PUBLIC_IP:5001` and see the overlayed stream.
-
 ## Webm
 
 First install ffmpeg. This code relies on ffserver, which is no longer available in very recent versions of ffmpeg, so make sure you get something up to 3.4.x. 
