@@ -24,7 +24,13 @@ from scipy.spatial.distance import cdist
 from imutils.video import FileVideoStream
 
 
-def load_img(img, do_random_crop, do_random_flip, image_size, do_prewhiten=True):
+
+def load_img(img, do_random_crop, do_random_flip, image_size, 
+             do_prewhiten=True):
+    '''
+    Process the captured images from the webcam, prewhitening, cropping and
+    flipping as required. Returns processed image.
+    '''
     images = np.zeros((1, image_size, image_size, 3))
     if img.ndim == 2:
         img = to_rgb(img)
@@ -32,28 +38,32 @@ def load_img(img, do_random_crop, do_random_flip, image_size, do_prewhiten=True)
         img = prewhiten(img)
     img = crop(img, do_random_crop, image_size)
     img = flip(img, do_random_flip)
-    images[:,:,:,:] = img
+    images[:, :, :, :] = img
     return images
 
+
 def align_face(img, pnet, rnet, onet):
+    '''
+    Detect and align faces from a frame, returning the detected faces and
+    the bounding boxes for the faces. 
+    '''
     print("start detect")
-    minsize = 20 # minimum size of face
-    threshold = [ 0.6, 0.7, 0.7 ]  # three steps's threshold
-    factor = 0.709 # scale factor
+    minsize = 20  # minimum size of face
+    threshold = [0.6, 0.7, 0.7]  # three steps's threshold
+    factor = 0.709  # scale factor
     image_size = 160
 
-    #print("before img.size == 0")	
     if img.size == 0:
         print("empty array")
-        return False,img,[0,0,0,0]
+        return False, img, [0, 0, 0, 0]
 
-    if img.ndim<2:
+    if img.ndim < 2:
         print('Unable to align')
 
     if img.ndim == 2:
         img = to_rgb(img)
 
-    img = img[:,:,0:3]
+    img = img[:, :, 0:3]
     margin = 44
 
     bounding_boxes, _ = detect_face.detect_face(img, minsize, pnet, rnet, onet, threshold, factor)
@@ -61,18 +71,18 @@ def align_face(img, pnet, rnet, onet):
     nrof_faces = bounding_boxes.shape[0]
     detect_multiple_faces = True
     
-    if nrof_faces==0:
-        return False,img,[0,0,0,0]
+    if nrof_faces == 0:
+        return False, img, [0, 0, 0, 0]
     else:
-        det = bounding_boxes[:,0:4]
+        det = bounding_boxes[:, 0:4]
         det_arr = []
         img_size = np.asarray(img.shape)[0:2]
-        if nrof_faces>1:
+        if nrof_faces > 1:
             if detect_multiple_faces:
                 for i in range(nrof_faces):
                     det_arr.append(np.squeeze(det[i]))
             else:
-                bounding_box_size = (det[:,2]-det[:,0])*(det[:,3]-det[:,1])
+                bounding_box_size = (det[:, 2]-det[:, 0])*(det[:, 3]-det[:, 1])
                 img_center = img_size / 2
                 offsets = np.vstack([ (det[:,0]+det[:,2])/2-img_center[1], (det[:,1]+det[:,3])/2-img_center[0] ])
                 offset_dist_squared = np.sum(np.power(offsets,2.0),0)
@@ -95,9 +105,15 @@ def align_face(img, pnet, rnet, onet):
             faces.append(scaled)
             bboxes.append(bb)
         print("leaving align face")
-        return True,faces,bboxes
+        return True, faces, bboxes
+
 
 def identify_person(image_vector, feature_names, feature_np, k=9):
+    '''
+    Calculates the Euclidean distance between a face embedding and the
+    stored embeddings, returning the identity of the stored embedding most
+    similar to the face embedding and the distance between these embeddings.
+    '''
     d = np.squeeze(cdist(image_vector, feature_np, metric='euclidean'))
     top_k_ind = np.argsort(d).tolist()[:k]
     result = feature_names[top_k_ind[0]]
@@ -107,6 +123,13 @@ def identify_person(image_vector, feature_names, feature_np, k=9):
 
 
 def write_svg_facenet_emb(stream_url):
+    '''
+    Reads the facenet model and the saved embeddings from disk, and connects to
+    the in-memory Redis database. Detects faces in the specified stream and
+    calculates the corresponding bounding boxes. Writes the bounding boxes for
+    all detected and identified faces to an svg overlay which is then saved to
+    Redis to be accessed by other processes.
+    '''
     dim1, dim2 = "1280px", "720px"
 
     print("[INFO] opening redis connection")
@@ -158,7 +181,7 @@ def write_svg_facenet_emb(stream_url):
             capture = cv2.VideoCapture(stream_url)
             ret, frame = capture.read()
 
-            print("got") 
+            print("got")
             gray = cv2.cvtColor(frame, 0)
             print("converted to gray")
             if(gray.size < 0):
@@ -166,7 +189,7 @@ def write_svg_facenet_emb(stream_url):
                 continue
 
             print(gray.size)
-            response, faces, bboxs = align_face(gray,pnet, rnet, onet)
+            response, faces, bboxs = align_face(gray, pnet, rnet, onet)
             print(response)
             print("{} faces found.".format(len(faces)))
 
@@ -253,6 +276,13 @@ def write_svg_facenet_emb(stream_url):
 #    cv2.destroyAllWindows()
 
 def write_svg_facenet(stream_url):
+    '''
+    Reads an alternative facenet model, and connects to the in-memory Redis 
+    database. Detects faces (no identification) in the specified stream and 
+    calculates the corresponding bounding boxes. Writes the bounding boxes for
+    all detected faces to an svg overlay which is then saved to
+    Redis to be accessed by other processes. 
+    '''
     print("[INFO] opening redis connection")
     redis_db = redis.StrictRedis(host="localhost", port=6379, db=0)
     # construct the argument parse and parse the arguments
@@ -346,6 +376,13 @@ def write_svg_facenet(stream_url):
 
 
 def write_svg_haar(stream_url):
+    '''
+    Reads an alternative face detection model, and connects to the in-memory 
+    Redis database. Detects faces (no identification) in the specified stream 
+    and calculates the corresponding bounding boxes. Writes the bounding boxes 
+    for all detected faces to an svg overlay which is then saved to
+    Redis to be accessed by other processes. 
+    '''
     print("[INFO] opening redis connection")
     redis_db = redis.StrictRedis(host="localhost", port=6379, db=0)
     print("[INFO] starting stream")
