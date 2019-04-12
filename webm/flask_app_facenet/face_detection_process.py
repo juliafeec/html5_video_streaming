@@ -166,7 +166,9 @@ def write_svg_facenet_emb(stream_url):
         embedding_size = embeddings.get_shape()[1]
         print("Starting prediction")
 
-        capture = cv2.VideoCapture(stream_url)
+        fvs = FileVideoStream(stream_url, queue_size=1).start()
+
+        #capture = cv2.VideoCapture(stream_url)
         while(True):
             print("capture frame")
 
@@ -178,8 +180,13 @@ def write_svg_facenet_emb(stream_url):
             #        break
             #ret, frame = capture.retrieve()
 
-            capture = cv2.VideoCapture(stream_url)
-            ret, frame = capture.read()
+            #capture = cv2.VideoCapture(stream_url)
+            #ret, frame = capture.read()
+            if not fvs.more():
+                continue
+            frame = fvs.read()
+
+
 
             print("got")
             gray = cv2.cvtColor(frame, 0)
