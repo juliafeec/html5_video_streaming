@@ -35,10 +35,6 @@ def upload(file):
 
 app = Flask(__name__)
 
-@app.route('/', methods=['GET', 'POST'])
-def login():
-    return render_template("login.html")
-
 
 @app.route('/main_page', methods=['GET', 'POST'])
 def main_page():
@@ -52,10 +48,6 @@ def main_page():
 
 	return render_template("main_page2.html")
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    return render_template("login.html")
-
 @app.route("/svg")
 def svg():
     # with open('overlay.xml', 'r') as f:
@@ -63,6 +55,12 @@ def svg():
     svg_overlay = redis_db.get('overlay').decode('utf-8')
     svg_string = "data:image/svg+xml;utf8,"+svg_overlay
     return svg_string
+
+
+@app.route('/', methods=['GET', 'POST'])
+def login():
+    return render_template("login.html")
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)
