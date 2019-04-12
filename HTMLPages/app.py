@@ -28,7 +28,8 @@ def upload(file):
     k = Key(bucket)
     k.key = filename
     k.set_contents_from_string(file_content)
-
+    key = bucket.lookup(filename)
+    key.set_acl('public-read-write')
 
 app = Flask(__name__)
 
