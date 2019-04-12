@@ -1,7 +1,8 @@
 import sys
-sys.path.append("/home/ubuntu/facenet/src")
-sys.path.append("/home/julia/USF/spring2/productAnalytics/facenet/src")
-
+import os
+#sys.path.append("/home/ubuntu/facenet/src")
+#sys.path.append("/home/julia/USF/spring2/productAnalytics/facenet/src")
+sys.path.append(os.path.join(os.path.expanduser('~'), 'facenet', 'src'))
 import svgwrite
 import cv2
 import numpy as np
@@ -168,17 +169,17 @@ def write_svg_facenet_emb(stream_url):
             print("{} faces found.".format(len(faces)))
 
             if response is True:
+                svg_document = svgwrite.Drawing(size=(dim1, dim2))
+                svg_document.add(svg_document.rect(insert = (0, 0),
+                                   size = (dim1, dim2),
+                                   stroke_width = "10",
+                                   stroke = "green"
+                                   ,fill = "rgb(0,0,0)", fill_opacity=0
+                                  ))
                 for i, image in enumerate(faces):
                     # 640 360
                     dim1, dim2 = frame.shape[1], frame.shape[0]
-                    svg_document = svgwrite.Drawing(size=(dim1, dim2))
-                    svg_document.add(svg_document.rect(insert = (0, 0),
-                                       size = (dim1, dim2),
-                                       stroke_width = "10",
-                                       stroke = "green"
-                                       ,fill = "rgb(0,0,0)", fill_opacity=0
-                                      ))
-
+                    
                     bb = bboxs[i]
                     images = load_img(image, False, False, image_size)
                     feed_dict = { images_placeholder:images, phase_train_placeholder:False }
@@ -186,10 +187,10 @@ def write_svg_facenet_emb(stream_url):
                     feature_vector = sess.run(embeddings, feed_dict=feed_dict)
                     print("start identify")
                     result, distance = identify_person(feature_vector, feature_names, feature_np, 1)
-                    print("identified")
+                    print("identified: %s, distance: %.3f" % (result,
+                                                              distance))
                     print("calculate svg")
-
-                    if distance < 0.72:
+                    if distance < 1.0:
                         print("name: {} distance: {}".format(result, distance))
 
                         #cv2.rectangle(gray,(bb[0],bb[1]),(bb[2],bb[3]),(255,255,255),2)
@@ -234,12 +235,12 @@ def write_svg_facenet_emb(stream_url):
                                                  fill="black", style=text_style))
 
 
-                    print("export svg")
-                    svg_string = svg_document.tostring()
+                print("export svg")
+                svg_string = svg_document.tostring()
 
-                    print("write")
-                    redis_db.set('overlay', svg_string)
-                    print("done")
+                print("write")
+                redis_db.set('overlay', svg_string)
+                print("done")
 
                     #else:
                     #    cv2.rectangle(gray,(bb[0],bb[1]),(bb[2],bb[3]),(255,255,255),2)
