@@ -13,16 +13,17 @@ class UploadFileForm(FlaskForm):
     file_selector = FileField('File', validators=[FileRequired()])
     submit = SubmitField('Submit')
 
+
 def upload(file):
     """upload a file from a client machine."""
     filename = secure_filename(file.filename)
-    # filename : filename of FileField
-    # secure_filename secures a filename before storing it directly on the filesystem.
     file_content = file.stream.read()
 
-    bucket_name = 'msds603camera' # Change it to your bucket.
-    s3_connection = boto.connect_s3(aws_access_key_id="AKIA2UZ37BVQGUF5O4XB",
-                                    aws_secret_access_key='DuI84JbZtURkalRwyiy1yWUV2wvwR63jDp3kWf3b')
+    bucket_name = 'msds603camera'
+    key_id = "AKIA2UZ37BVQGUF5O4XB"
+    acc_key = "DuI84JbZtURkalRwyiy1yWUV2wvwR63jDp3kWf3b"
+    s3_connection = boto.connect_s3(aws_access_key_id=key_id,
+                                    aws_secret_access_key=acc_key)
     bucket = s3_connection.get_bucket(bucket_name)
     k = Key(bucket)
     k.key = filename
@@ -38,13 +39,10 @@ def main_page():
 		print("Here, in POST!")
 		name = request.form['name']
 		imgFile = request.files['img_file']
-		# we need to call upload here
 		upload(imgFile)
-
-
 	return render_template("main_page2.html")
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/', methods=['GET', 'POST'])
 def login():
     return render_template("login.html")
 
