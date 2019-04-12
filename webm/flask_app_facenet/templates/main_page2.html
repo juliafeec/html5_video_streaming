@@ -24,15 +24,41 @@
 <!--===============================================================================================-->
 	<script src="{{ url_for('static', filename='vendor/jquery/jquery-3.2.1.min.js') }}"></script>
     <script type = "text/javascript" src = "{{ url_for('static', filename='js/functions_cam.js') }}" ></script>
+
+<style>
+  #vid {
+  display: inline-block;
+  width: 100% !important;
+  height: auto;
+  }
+  #image {
+   position: absolute;
+   top: 0;
+   left: 0;
+   display: none;
+  }
+  </style>
+
 </head>
 <body>
-
+        <a href="http://ec2-13-57-20-231.us-west-1.compute.amazonaws.com:8090/stat.html">Server Status</a>
+        <p/>
 	<div class="limiter">
 		<div class="container-login100">
 			<div class="wrap-cam100">
 
 				<div id="cam" class="leftpane">
 				    <h1>Test Page 2</h1>
+                                    <div id="video_div">
+                                     <a href="http://ec2-13-57-20-231.us-west-1.compute.amazonaws.com:8090/stat.html">Server Status</a>
+    <p/>
+    <video id="vid" autoplay muted>
+      <source src="http://ec2-13-57-20-231.us-west-1.compute.amazonaws.com:8090/pattern.webm">
+    </video>
+    <img id="image" src='data:image/svg+xml;utf8,<svg baseProfile="full" height="720px" version="1.1" width="1280px" xmlns="http://www.w3.org/2000/svg" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xlink="http://www.w3.org/1999/xlink"><defs /><rect fill="rgb(0,0,0)" fill-opacity="0" height="720px" stroke="green" stroke-width="10" width="1280px" x="0" y="0" /></svg>' />
+    <p>
+
+                                    </div>
 				</div>
 				
 				<div class="rightpane" id="listImages">
@@ -114,6 +140,43 @@
 	</script>
 <!--===============================================================================================-->
 	<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+        <script>
+    
+document.addEventListener("DOMContentLoaded", function() {
+    var copy_button = document.getElementById("copy_button");
+    copy_button.addEventListener("click", function() {
+	var video = document.getElementById("vid");
+	var canvas = document.getElementById("demo_canvas");
+	var ctx = canvas.getContext("2d");
+	canvas.width = video.videoWidth;
+	canvas.height = video.videoHeight
+	ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    });
+});
+function overlayImage(){
+      var height = $("#vid").height();
+      var width = $("#vid").width();
+      var top = $("#vid").offset().top;
+      var left = $("#vid").offset().left;
+      $('#image').css(
+          "height", height);
+      $('#image').css("top", top);
+      $('#image').css("left", left);
+      $('#image').css(
+          "width", width);
+      $('#image').show();  
+      $.get("/svg", function(data, status){
+      //alert("Data: " + data + "\nStatus: " + status);
+      $("#image").attr("src", data);
+      setTimeout(overlayImage, 500);
+      //overlayImage();
+      });
+ 
+  }
+  
+  overlayImage();
+     </script>
+
 
 </body>
 </html>
