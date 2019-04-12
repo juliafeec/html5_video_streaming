@@ -103,11 +103,11 @@ def yolo_write_svg(stream_url):
         print("[INFO] Started graph")
         while(True): 
             if True:
-                #cap = cv2.VideoCapture(stream_url)
-                for i in range(10):
-                    cap.grab()
-                #ret, frame = cap.read()
-                ret, frame = cap.retrieve()
+                cap = cv2.VideoCapture(stream_url)
+                #for i in range(10):
+                #    cap.grab()
+                ret, frame = cap.read()
+                #ret, frame = cap.retrieve()
                 if not ret:
                     continue
             else:
