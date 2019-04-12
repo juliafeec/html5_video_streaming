@@ -1,7 +1,7 @@
 import sys
 import os
-#sys.path.append("/home/ubuntu/facenet/src")
-#sys.path.append("/home/julia/USF/spring2/productAnalytics/facenet/src")
+sys.path.append("/home/ubuntu/facenet/src")
+sys.path.append("/home/julia/USF/spring2/productAnalytics/facenet/src")
 sys.path.append(os.path.join(os.path.expanduser('~'), 'facenet', 'src'))
 import svgwrite
 import cv2
@@ -21,6 +21,8 @@ import sys
 import pickle
 from scipy import misc
 from scipy.spatial.distance import cdist
+from imutils.video import FileVideoStream
+
 
 def load_img(img, do_random_crop, do_random_flip, image_size, do_prewhiten=True):
     images = np.zeros((1, image_size, image_size, 3))
@@ -347,12 +349,18 @@ def write_svg_haar(stream_url):
     print("[INFO] opening redis connection")
     redis_db = redis.StrictRedis(host="localhost", port=6379, db=0)
     print("[INFO] starting stream")
-    capture = cv2.VideoCapture(stream_url)
-    capture.set(cv2.CAP_PROP_BUFFERSIZE, 0)
+#    capture = cv2.VideoCapture(stream_url)
+#    capture.set(cv2.CAP_PROP_BUFFERSIZE, 0)
+    fvs = FileVideoStream(stream_url, queue_size=1).start()
     process_this_frame = True
     while True:
-        if process_this_frame: 
-            read_flag, img = capture.read()
+        #if process_this_frame: 
+        if True: 
+            #read_flag, img = capture.read()
+            if not fvs.more():
+                continue
+            img = fvs.read()
+
 
             face_cascade = cv2.CascadeClassifier("./haarcascade_frontalface_default.xml")
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
