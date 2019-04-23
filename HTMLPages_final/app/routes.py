@@ -24,8 +24,8 @@ def upload(file):
     file_content = file.stream.read()
 
     bucket_name = 'msds603camera' # Change it to your bucket.
-    s3_connection = boto.connect_s3(aws_access_key_id="AKIA2UZ37BVQGUF5O4XB",
-                                    aws_secret_access_key='DuI84JbZtURkalRwyiy1yWUV2wvwR63jDp3kWf3b')
+    s3_connection = boto.connect_s3(aws_access_key_id="AKIA2UZ37BVQN2YYZWFJ",
+                                    aws_secret_access_key='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')
     bucket = s3_connection.get_bucket(bucket_name)
     k = Key(bucket)
     k.key = filename
