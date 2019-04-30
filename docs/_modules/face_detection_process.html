@@ -1,0 +1,542 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>face_detection_process &#8212; Pelicam 0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for face_detection_process</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~&#39;</span><span class="p">),</span> <span class="s1">&#39;facenet&#39;</span><span class="p">,</span> <span class="s1">&#39;src&#39;</span><span class="p">))</span>
+<span class="kn">import</span> <span class="nn">svgwrite</span>
+<span class="kn">import</span> <span class="nn">cv2</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="c1"># import imutils</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">redis</span>
+
+<span class="kn">from</span> <span class="nn">align</span> <span class="k">import</span> <span class="n">detect_face</span>
+<span class="kn">from</span> <span class="nn">facenet</span> <span class="k">import</span> <span class="n">prewhiten</span><span class="p">,</span> <span class="n">crop</span><span class="p">,</span> <span class="n">flip</span><span class="p">,</span> <span class="n">to_rgb</span>
+
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="kn">import</span> <span class="nn">facenet</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">misc</span>
+<span class="kn">from</span> <span class="nn">scipy.spatial.distance</span> <span class="k">import</span> <span class="n">cdist</span>
+<span class="kn">from</span> <span class="nn">imutils.video</span> <span class="k">import</span> <span class="n">FileVideoStream</span>
+
+
+<div class="viewcode-block" id="load_img"><a class="viewcode-back" href="../code.html#face_detection_process.load_img">[docs]</a><span class="k">def</span> <span class="nf">load_img</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">do_random_crop</span><span class="p">,</span> <span class="n">do_random_flip</span><span class="p">,</span> <span class="n">image_size</span><span class="p">,</span>
+             <span class="n">do_prewhiten</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Process the captured images from the webcam, prewhitening, cropping and</span>
+<span class="sd">    flipping as required. Returns processed image.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">images</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">image_size</span><span class="p">,</span> <span class="n">image_size</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">img</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">to_rgb</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">do_prewhiten</span><span class="p">:</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">prewhiten</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+    <span class="n">img</span> <span class="o">=</span> <span class="n">crop</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">do_random_crop</span><span class="p">,</span> <span class="n">image_size</span><span class="p">)</span>
+    <span class="n">img</span> <span class="o">=</span> <span class="n">flip</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">do_random_flip</span><span class="p">)</span>
+    <span class="n">images</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">img</span>
+    <span class="k">return</span> <span class="n">images</span></div>
+
+
+<div class="viewcode-block" id="align_face"><a class="viewcode-back" href="../code.html#face_detection_process.align_face">[docs]</a><span class="k">def</span> <span class="nf">align_face</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">pnet</span><span class="p">,</span> <span class="n">rnet</span><span class="p">,</span> <span class="n">onet</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Detect and align faces from a frame, returning the detected faces and</span>
+<span class="sd">    the bounding boxes for the faces.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;start detect&quot;</span><span class="p">)</span>
+    <span class="n">minsize</span> <span class="o">=</span> <span class="mi">20</span>  <span class="c1"># minimum size of face</span>
+    <span class="n">threshold</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">]</span>  <span class="c1"># three steps&#39;s threshold</span>
+    <span class="n">factor</span> <span class="o">=</span> <span class="mf">0.709</span>  <span class="c1"># scale factor</span>
+    <span class="n">image_size</span> <span class="o">=</span> <span class="mi">160</span>
+
+    <span class="k">if</span> <span class="n">img</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;empty array&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">img</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">img</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Unable to align&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">img</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">to_rgb</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+
+    <span class="n">img</span> <span class="o">=</span> <span class="n">img</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">margin</span> <span class="o">=</span> <span class="mi">44</span>
+
+    <span class="n">bounding_boxes</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">detect_face</span><span class="o">.</span><span class="n">detect_face</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">minsize</span><span class="p">,</span> <span class="n">pnet</span><span class="p">,</span> <span class="n">rnet</span><span class="p">,</span> <span class="n">onet</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">factor</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;done detect&quot;</span><span class="p">)</span>
+    <span class="n">nrof_faces</span> <span class="o">=</span> <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">detect_multiple_faces</span> <span class="o">=</span> <span class="kc">True</span>
+    
+    <span class="k">if</span> <span class="n">nrof_faces</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">img</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">det</span> <span class="o">=</span> <span class="n">bounding_boxes</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span>
+        <span class="n">det_arr</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">img_size</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">)[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">nrof_faces</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">detect_multiple_faces</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nrof_faces</span><span class="p">):</span>
+                    <span class="n">det_arr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">det</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">bounding_box_size</span> <span class="o">=</span> <span class="p">(</span><span class="n">det</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span><span class="o">-</span><span class="n">det</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span><span class="o">*</span><span class="p">(</span><span class="n">det</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span><span class="o">-</span><span class="n">det</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
+                <span class="n">img_center</span> <span class="o">=</span> <span class="n">img_size</span> <span class="o">/</span> <span class="mi">2</span>
+                <span class="n">offsets</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([(</span><span class="n">det</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">det</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])</span><span class="o">/</span><span class="mi">2</span><span class="o">-</span><span class="n">img_center</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                                     <span class="p">(</span><span class="n">det</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">det</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">])</span><span class="o">/</span><span class="mi">2</span><span class="o">-</span><span class="n">img_center</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+                <span class="n">offset_dist_squared</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">offsets</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="c1"># some extra weight on the centering</span>
+                <span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">bounding_box_size</span><span class="o">-</span><span class="n">offset_dist_squared</span><span class="o">*</span><span class="mf">2.0</span><span class="p">)</span>
+                <span class="n">det_arr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">det</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="p">:])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">det_arr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">det</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">det_arr</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">faces</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">bboxes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">det</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">det_arr</span><span class="p">):</span>
+            <span class="n">det</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">det</span><span class="p">)</span>
+            <span class="n">bb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+            <span class="n">bb</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">det</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">margin</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">bb</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">det</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">margin</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">bb</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">det</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="n">margin</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">img_size</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">bb</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">det</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">+</span><span class="n">margin</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">img_size</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">cropped</span> <span class="o">=</span> <span class="n">img</span><span class="p">[</span><span class="n">bb</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span><span class="n">bb</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">bb</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">bb</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="p">:]</span>
+            <span class="n">scaled</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">imresize</span><span class="p">(</span><span class="n">cropped</span><span class="p">,</span> <span class="p">(</span><span class="n">image_size</span><span class="p">,</span> <span class="n">image_size</span><span class="p">),</span> 
+                                   <span class="n">interp</span><span class="o">=</span><span class="s1">&#39;bilinear&#39;</span><span class="p">)</span>
+            <span class="n">faces</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">scaled</span><span class="p">)</span>
+            <span class="n">bboxes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bb</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;leaving align face&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="n">faces</span><span class="p">,</span> <span class="n">bboxes</span></div>
+
+
+<div class="viewcode-block" id="identify_person"><a class="viewcode-back" href="../code.html#face_detection_process.identify_person">[docs]</a><span class="k">def</span> <span class="nf">identify_person</span><span class="p">(</span><span class="n">image_vector</span><span class="p">,</span> <span class="n">feature_names</span><span class="p">,</span> <span class="n">feature_np</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">9</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Calculates the Euclidean distance between a face embedding and the</span>
+<span class="sd">    stored embeddings, returning the identity of the stored embedding most</span>
+<span class="sd">    similar to the face embedding and the distance between these embeddings.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">cdist</span><span class="p">(</span><span class="n">image_vector</span><span class="p">,</span> <span class="n">feature_np</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;euclidean&#39;</span><span class="p">))</span>
+    <span class="n">top_k_ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()[:</span><span class="n">k</span><span class="p">]</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">feature_names</span><span class="p">[</span><span class="n">top_k_ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+    <span class="n">distance</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="n">top_k_ind</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">name</span><span class="p">,</span> <span class="n">distance</span></div>
+
+
+<div class="viewcode-block" id="write_svg_facenet_emb"><a class="viewcode-back" href="../code.html#face_detection_process.write_svg_facenet_emb">[docs]</a><span class="k">def</span> <span class="nf">write_svg_facenet_emb</span><span class="p">(</span><span class="n">stream_url</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Reads the facenet model and the saved embeddings from disk, and connects to</span>
+<span class="sd">    the in-memory Redis database. Detects faces in the specified stream and</span>
+<span class="sd">    calculates the corresponding bounding boxes. Writes the bounding boxes for</span>
+<span class="sd">    all detected and identified faces to an svg overlay which is then saved to</span>
+<span class="sd">    Redis to be accessed by other processes.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">dim1</span><span class="p">,</span> <span class="n">dim2</span> <span class="o">=</span> <span class="s2">&quot;1280px&quot;</span><span class="p">,</span> <span class="s2">&quot;720px&quot;</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[INFO] opening redis connection&quot;</span><span class="p">)</span>
+    <span class="n">redis_db</span> <span class="o">=</span> <span class="n">redis</span><span class="o">.</span><span class="n">StrictRedis</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">6379</span><span class="p">,</span> <span class="n">db</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># load our serialized model from disk</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[INFO] loading model...&quot;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;extracted_dict.pickle&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">feature_dict</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    
+    <span class="n">feature_names</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">feature_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+    <span class="n">feature_np</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">feature_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+
+    <span class="c1"># model_exp = &quot;20180408-102900/&quot;</span>
+    <span class="n">model_exp</span> <span class="o">=</span> <span class="s2">&quot;20180402-114759&quot;</span>
+    <span class="n">graph_fr</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+    <span class="n">sess_fr</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">Session</span><span class="p">(</span><span class="n">graph</span><span class="o">=</span><span class="n">graph_fr</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">graph_fr</span><span class="o">.</span><span class="n">as_default</span><span class="p">():</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Loading graph&quot;</span><span class="p">)</span>
+        <span class="n">saverf</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">train</span><span class="o">.</span><span class="n">import_meta_graph</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model_exp</span><span class="p">,</span>
+                                            <span class="s1">&#39;model-20180402-114759.meta&#39;</span><span class="p">))</span>
+        <span class="n">saverf</span><span class="o">.</span><span class="n">restore</span><span class="p">(</span><span class="n">sess_fr</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model_exp</span><span class="p">,</span>
+                                             <span class="s1">&#39;model-20180402-114759.ckpt-275&#39;</span><span class="p">))</span>
+    
+        <span class="n">pnet</span><span class="p">,</span> <span class="n">rnet</span><span class="p">,</span> <span class="n">onet</span> <span class="o">=</span> <span class="n">detect_face</span><span class="o">.</span><span class="n">create_mtcnn</span><span class="p">(</span><span class="n">sess_fr</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">sess</span> <span class="o">=</span> <span class="n">sess_fr</span>
+        <span class="n">images_placeholder</span> <span class="o">=</span> <span class="n">sess</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">get_tensor_by_name</span><span class="p">(</span><span class="s2">&quot;input:0&quot;</span><span class="p">)</span>
+        <span class="n">images_placeholder</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">resize_images</span><span class="p">(</span><span class="n">images_placeholder</span><span class="p">,</span>
+                                                    <span class="p">(</span><span class="mi">160</span><span class="p">,</span> <span class="mi">160</span><span class="p">))</span>
+        <span class="n">embeddings</span> <span class="o">=</span> <span class="n">sess</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">get_tensor_by_name</span><span class="p">(</span><span class="s2">&quot;embeddings:0&quot;</span><span class="p">)</span>
+        <span class="n">phase_train_placeholder</span> <span class="o">=</span> <span class="n">sess</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span>\
+            <span class="n">get_tensor_by_name</span><span class="p">(</span><span class="s2">&quot;phase_train:0&quot;</span><span class="p">)</span>
+    
+        <span class="n">image_size</span> <span class="o">=</span> <span class="mi">160</span>
+        <span class="n">embedding_size</span> <span class="o">=</span> <span class="n">embeddings</span><span class="o">.</span><span class="n">get_shape</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Starting prediction&quot;</span><span class="p">)</span>
+
+        <span class="n">fvs</span> <span class="o">=</span> <span class="n">FileVideoStream</span><span class="p">(</span><span class="n">stream_url</span><span class="p">,</span> <span class="n">queue_size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+        <span class="c1"># capture = cv2.VideoCapture(stream_url)</span>
+        <span class="k">while</span><span class="p">(</span><span class="kc">True</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;capture frame&quot;</span><span class="p">)</span>
+
+            <span class="c1"># for k in range(100):</span>
+            <span class="c1">#    start_time = time.time()</span>
+            <span class="c1">#    r = capture.grab()</span>
+            <span class="c1">#    delta = time.time() - start_time</span>
+            <span class="c1">#    if delta &gt; 0.09:</span>
+            <span class="c1">#        break</span>
+            <span class="c1"># ret, frame = capture.retrieve()</span>
+
+            <span class="c1"># capture = cv2.VideoCapture(stream_url)</span>
+            <span class="c1"># ret, frame = capture.read()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">fvs</span><span class="o">.</span><span class="n">more</span><span class="p">():</span>
+                <span class="k">continue</span>
+            <span class="n">frame</span> <span class="o">=</span> <span class="n">fvs</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;got&quot;</span><span class="p">)</span>
+            <span class="n">gray</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;converted to gray&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">gray</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;skipping&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="n">gray</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+            <span class="n">response</span><span class="p">,</span> <span class="n">faces</span><span class="p">,</span> <span class="n">bboxs</span> <span class="o">=</span> <span class="n">align_face</span><span class="p">(</span><span class="n">gray</span><span class="p">,</span> <span class="n">pnet</span><span class="p">,</span> <span class="n">rnet</span><span class="p">,</span> <span class="n">onet</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> faces found.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">faces</span><span class="p">)))</span>
+
+            <span class="k">if</span> <span class="n">response</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">svg_document</span> <span class="o">=</span> <span class="n">svgwrite</span><span class="o">.</span><span class="n">Drawing</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">dim1</span><span class="p">,</span> <span class="n">dim2</span><span class="p">))</span>
+                <span class="n">svg_document</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">svg_document</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span>
+                                 <span class="n">insert</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                                 <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">dim1</span><span class="p">,</span> <span class="n">dim2</span><span class="p">),</span>
+                                 <span class="n">stroke_width</span><span class="o">=</span><span class="s2">&quot;10&quot;</span><span class="p">,</span>
+                                 <span class="n">stroke</span><span class="o">=</span><span class="s2">&quot;green&quot;</span><span class="p">,</span>
+                                 <span class="n">fill</span><span class="o">=</span><span class="s2">&quot;rgb(0,0,0)&quot;</span><span class="p">,</span>
+                                 <span class="n">fill_opacity</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                                 <span class="p">)</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">image</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">faces</span><span class="p">):</span>
+                    <span class="c1"># 640 360</span>
+                    <span class="n">dim1</span><span class="p">,</span> <span class="n">dim2</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">frame</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    
+                    <span class="n">bb</span> <span class="o">=</span> <span class="n">bboxs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                    <span class="n">images</span> <span class="o">=</span> <span class="n">load_img</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">image_size</span><span class="p">)</span>
+                    <span class="n">feed_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">images_placeholder</span><span class="p">:</span> <span class="n">images</span><span class="p">,</span>
+                                 <span class="n">phase_train_placeholder</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;start run emb&quot;</span><span class="p">)</span>
+                    <span class="n">feature_vector</span> <span class="o">=</span> <span class="n">sess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">embeddings</span><span class="p">,</span> <span class="n">feed_dict</span><span class="o">=</span><span class="n">feed_dict</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;start identify&quot;</span><span class="p">)</span>
+                    <span class="n">result</span><span class="p">,</span> <span class="n">distance</span> <span class="o">=</span> <span class="n">identify_person</span><span class="p">(</span><span class="n">feature_vector</span><span class="p">,</span>
+                                                       <span class="n">feature_names</span><span class="p">,</span>
+                                                       <span class="n">feature_np</span><span class="p">,</span>
+                                                       <span class="mi">1</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;identified: </span><span class="si">%s</span><span class="s2">, distance: </span><span class="si">%.3f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">result</span><span class="p">,</span>
+                                                              <span class="n">distance</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;calculate svg&quot;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">distance</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;name: </span><span class="si">{}</span><span class="s2"> distance: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">distance</span><span class="p">))</span>
+                        <span class="n">startX</span> <span class="o">=</span> <span class="n">bb</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="n">startY</span> <span class="o">=</span> <span class="n">bb</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="n">box_w</span> <span class="o">=</span> <span class="n">bb</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">startX</span>
+                        <span class="n">box_h</span> <span class="o">=</span> <span class="n">bb</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">startY</span>
+                        
+                        <span class="n">svg_document</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">svg_document</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span>
+                                         <span class="n">insert</span><span class="o">=</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">startX</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">startY</span><span class="p">)),</span>
+                                         <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">px&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">box_w</span><span class="p">),</span>
+                                               <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">px&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">box_h</span><span class="p">)),</span>
+                                         <span class="n">stroke_width</span><span class="o">=</span><span class="s2">&quot;10&quot;</span><span class="p">,</span>
+                                         <span class="n">stroke</span><span class="o">=</span><span class="s2">&quot;yellow&quot;</span><span class="p">,</span>
+                                         <span class="n">fill</span><span class="o">=</span><span class="s2">&quot;rgb(0,0,0)&quot;</span><span class="p">,</span>
+                                         <span class="n">fill_opacity</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                                         <span class="p">)</span>
+                        <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> </span><span class="si">{:.2f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="mi">1</span><span class="o">-</span><span class="n">distance</span><span class="p">)</span>
+                        <span class="n">text_style</span> <span class="o">=</span> <span class="s2">&quot;font-size:50px; font-family:Courier New;</span><span class="se">\</span>
+<span class="s2">                                      stroke:yellow; stroke-width:0.2em;&quot;</span>
+                        <span class="n">svg_document</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">svg_document</span><span class="o">.</span><span class="n">text</span><span class="p">(</span>
+                                         <span class="n">text</span><span class="p">,</span>
+                                         <span class="n">insert</span><span class="o">=</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">startX</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">startY</span><span class="p">)</span><span class="o">+</span><span class="mi">20</span><span class="p">),</span>
+                                         <span class="n">fill</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span>
+                                         <span class="n">style</span><span class="o">=</span><span class="n">text_style</span><span class="p">)</span>
+                                         <span class="p">)</span>
+                        
+                        <span class="n">text_style</span> <span class="o">=</span> <span class="s2">&quot;font-size:50px; font-family:Courier New;&quot;</span>
+                        <span class="n">svg_document</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">svg_document</span><span class="o">.</span><span class="n">text</span><span class="p">(</span>
+                                         <span class="n">text</span><span class="p">,</span>
+                                         <span class="n">insert</span><span class="o">=</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">startX</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">startY</span><span class="p">)</span><span class="o">+</span><span class="mi">20</span><span class="p">),</span>
+                                         <span class="n">fill</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span> 
+                                         <span class="n">style</span><span class="o">=</span><span class="n">text_style</span><span class="p">)</span>
+                                         <span class="p">)</span>
+
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;export svg&quot;</span><span class="p">)</span>
+                <span class="n">svg_string</span> <span class="o">=</span> <span class="n">svg_document</span><span class="o">.</span><span class="n">tostring</span><span class="p">()</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;write&quot;</span><span class="p">)</span>
+                <span class="n">redis_db</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;overlay&#39;</span><span class="p">,</span> <span class="n">svg_string</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;done&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="write_svg_facenet"><a class="viewcode-back" href="../code.html#face_detection_process.write_svg_facenet">[docs]</a><span class="k">def</span> <span class="nf">write_svg_facenet</span><span class="p">(</span><span class="n">stream_url</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Reads an alternative facenet model, and connects to the in-memory Redis </span>
+<span class="sd">    database. Detects faces (no identification) in the specified stream and </span>
+<span class="sd">    calculates the corresponding bounding boxes. Writes the bounding boxes for</span>
+<span class="sd">    all detected faces to an svg overlay which is then saved to</span>
+<span class="sd">    Redis to be accessed by other processes. </span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[INFO] opening redis connection&quot;</span><span class="p">)</span>
+    <span class="n">redis_db</span> <span class="o">=</span> <span class="n">redis</span><span class="o">.</span><span class="n">StrictRedis</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">6379</span><span class="p">,</span> <span class="n">db</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># construct the argument parse and parse the arguments</span>
+    <span class="n">ap</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="n">ap</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-p&quot;</span><span class="p">,</span> <span class="s2">&quot;--prototxt&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;path to Caffe &#39;deploy&#39; prototxt file&quot;</span><span class="p">)</span>
+    <span class="n">ap</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-m&quot;</span><span class="p">,</span> <span class="s2">&quot;--model&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;path to Caffe pre-trained model&quot;</span><span class="p">)</span>
+    <span class="n">ap</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-c&quot;</span><span class="p">,</span> <span class="s2">&quot;--confidence&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;minimum probability to filter weak detections&quot;</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">ap</span><span class="o">.</span><span class="n">parse_args</span><span class="p">())</span>
+
+    <span class="c1"># load our serialized model from disk</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[INFO] loading model...&quot;</span><span class="p">)</span>
+    <span class="n">net</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">dnn</span><span class="o">.</span><span class="n">readNetFromCaffe</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;prototxt&quot;</span><span class="p">],</span> <span class="n">args</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">])</span>
+    <span class="n">process_this_frame</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">while</span><span class="p">(</span><span class="kc">True</span><span class="p">):</span>
+        <span class="c1"># time.sleep(0.1)</span>
+        <span class="k">if</span> <span class="n">process_this_frame</span><span class="p">:</span>
+            <span class="n">capture</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">VideoCapture</span><span class="p">(</span><span class="n">stream_url</span><span class="p">)</span>
+            <span class="n">ret</span><span class="p">,</span> <span class="n">frame</span> <span class="o">=</span> <span class="n">capture</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="c1"># cv2.imshow(&#39;Stream IP camera opencv&#39;, frame)</span>
+
+            <span class="c1"># grab the frame from the threaded video stream and resize it</span>
+            <span class="c1"># to have a maximum width of 400 pixels</span>
+            <span class="c1"># frame = vs.read()</span>
+            <span class="c1"># frame = imutils.resize(frame, width=400)</span>
+
+            <span class="c1"># grab the frame dimensions and convert it to a blob</span>
+            <span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">blob</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">dnn</span><span class="o">.</span><span class="n">blobFromImage</span><span class="p">(</span><span class="n">cv2</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="p">(</span><span class="mi">300</span><span class="p">,</span> <span class="mi">300</span><span class="p">)),</span> <span class="mf">1.0</span><span class="p">,</span>
+                                         <span class="p">(</span><span class="mi">300</span><span class="p">,</span> <span class="mi">300</span><span class="p">),</span> <span class="p">(</span><span class="mf">104.0</span><span class="p">,</span> <span class="mf">177.0</span><span class="p">,</span> <span class="mf">123.0</span><span class="p">))</span>
+
+            <span class="c1"># pass the blob through the network and obtain the detections and</span>
+            <span class="c1"># predictions</span>
+            <span class="n">net</span><span class="o">.</span><span class="n">setInput</span><span class="p">(</span><span class="n">blob</span><span class="p">)</span>
+            <span class="n">detections</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">forward</span><span class="p">()</span>
+
+            <span class="n">svg_document</span> <span class="o">=</span> <span class="n">svgwrite</span><span class="o">.</span><span class="n">Drawing</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;1280px&quot;</span><span class="p">,</span> <span class="s2">&quot;720px&quot;</span><span class="p">))</span>
+
+            <span class="c1"># loop over the detections</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">detections</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]):</span>
+                <span class="c1"># extract the confidence (i.e., probability) associated with </span>
+                <span class="c1"># the prediction</span>
+                <span class="n">confidence</span> <span class="o">=</span> <span class="n">detections</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+
+                <span class="c1"># filter out weak detections by ensuring the `confidence` is</span>
+                <span class="c1"># greater than the minimum confidence</span>
+                <span class="k">if</span> <span class="n">confidence</span> <span class="o">&lt;</span> <span class="n">args</span><span class="p">[</span><span class="s2">&quot;confidence&quot;</span><span class="p">]:</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># compute the (x, y)-coordinates of the bounding box for the</span>
+                <span class="c1"># object</span>
+                <span class="n">box</span> <span class="o">=</span> <span class="n">detections</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span><span class="mi">7</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">])</span>
+                <span class="p">(</span><span class="n">startX</span><span class="p">,</span> <span class="n">startY</span><span class="p">,</span> <span class="n">endX</span><span class="p">,</span> <span class="n">endY</span><span class="p">)</span> <span class="o">=</span> <span class="n">box</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;int&quot;</span><span class="p">)</span>
+
+                <span class="c1"># draw the bounding box of the face along with the associated</span>
+                <span class="c1"># probability</span>
+                <span class="n">box_w</span> <span class="o">=</span> <span class="n">endX</span><span class="o">-</span><span class="n">startX</span>
+                <span class="n">box_h</span> <span class="o">=</span> <span class="n">endY</span><span class="o">-</span><span class="n">startY</span>
+
+                <span class="c1"># draw the bounding box of the face along with the associated</span>
+                <span class="c1"># probability</span>
+                <span class="n">svg_document</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">svg_document</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span>
+                                 <span class="n">insert</span><span class="o">=</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">startX</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">startY</span><span class="p">)),</span>
+                                 <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">px&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">box_w</span><span class="p">),</span>
+                                       <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">px&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">box_h</span><span class="p">)),</span>
+                                 <span class="n">stroke_width</span><span class="o">=</span><span class="s2">&quot;10&quot;</span><span class="p">,</span>
+                                 <span class="n">stroke</span><span class="o">=</span><span class="s2">&quot;yellow&quot;</span><span class="p">,</span>
+                                 <span class="n">fill</span><span class="o">=</span><span class="s2">&quot;rgb(0,0,0)&quot;</span><span class="p">,</span>
+                                 <span class="n">fill_opacity</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                                 <span class="p">)</span>
+                <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{:.2f}</span><span class="s2">%&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">confidence</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span>
+                <span class="n">text_style</span> <span class="o">=</span> <span class="s2">&quot;font-size:</span><span class="si">%i</span><span class="s2">px; </span><span class="se">\</span>
+<span class="s2">                              font-family:</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="s2">&quot;Courier New&quot;</span><span class="p">)</span>
+                <span class="n">svg_document</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">svg_document</span><span class="o">.</span><span class="n">text</span><span class="p">(</span>
+                                 <span class="n">text</span><span class="p">,</span>
+                                 <span class="n">insert</span><span class="o">=</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">startX</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">startY</span><span class="p">)</span><span class="o">+</span><span class="mi">20</span><span class="p">),</span>
+                                 <span class="n">fill</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span>
+                                 <span class="n">style</span><span class="o">=</span><span class="n">text_style</span><span class="p">)</span>
+                                 <span class="p">)</span>
+            <span class="c1"># cv2.imshow(&quot;Frame&quot;, frame)</span>
+            <span class="c1"># print(svg_document.tostring())</span>
+            <span class="c1"># with open(&#39;overlay.xml&#39;, &#39;w&#39;) as f:</span>
+                <span class="c1"># f.write(svg_document.tostring())</span>
+            <span class="n">redis_db</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;overlay&#39;</span><span class="p">,</span> <span class="n">svg_document</span><span class="o">.</span><span class="n">tostring</span><span class="p">())</span>
+        
+        <span class="n">process_this_frame</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">process_this_frame</span>
+        
+        <span class="n">key</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">waitKey</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span>
+        <span class="c1"># if the `q` key was pressed, break from the loop</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="nb">ord</span><span class="p">(</span><span class="s2">&quot;q&quot;</span><span class="p">):</span>
+            <span class="k">break</span>
+
+    <span class="n">cv2</span><span class="o">.</span><span class="n">destroyAllWindows</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="write_svg_haar"><a class="viewcode-back" href="../code.html#face_detection_process.write_svg_haar">[docs]</a><span class="k">def</span> <span class="nf">write_svg_haar</span><span class="p">(</span><span class="n">stream_url</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Reads an alternative face detection model, and connects to the in-memory </span>
+<span class="sd">    Redis database. Detects faces (no identification) in the specified stream </span>
+<span class="sd">    and calculates the corresponding bounding boxes. Writes the bounding boxes </span>
+<span class="sd">    for all detected faces to an svg overlay which is then saved to</span>
+<span class="sd">    Redis to be accessed by other processes. </span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[INFO] opening redis connection&quot;</span><span class="p">)</span>
+    <span class="n">redis_db</span> <span class="o">=</span> <span class="n">redis</span><span class="o">.</span><span class="n">StrictRedis</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">6379</span><span class="p">,</span> <span class="n">db</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[INFO] starting stream&quot;</span><span class="p">)</span>
+<span class="c1">#    capture = cv2.VideoCapture(stream_url)</span>
+<span class="c1">#    capture.set(cv2.CAP_PROP_BUFFERSIZE, 0)</span>
+    <span class="n">fvs</span> <span class="o">=</span> <span class="n">FileVideoStream</span><span class="p">(</span><span class="n">stream_url</span><span class="p">,</span> <span class="n">queue_size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+    <span class="n">process_this_frame</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="c1"># if process_this_frame: </span>
+        <span class="k">if</span> <span class="kc">True</span><span class="p">:</span> 
+            <span class="c1"># read_flag, img = capture.read()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">fvs</span><span class="o">.</span><span class="n">more</span><span class="p">():</span>
+                <span class="k">continue</span>
+            <span class="n">img</span> <span class="o">=</span> <span class="n">fvs</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+            <span class="n">face_cascade</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">CascadeClassifier</span><span class="p">(</span>
+                            <span class="s2">&quot;./haarcascade_frontalface_default.xml&quot;</span><span class="p">)</span>
+            <span class="n">gray</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_BGR2GRAY</span><span class="p">)</span>
+            <span class="n">faces</span> <span class="o">=</span> <span class="n">face_cascade</span><span class="o">.</span><span class="n">detectMultiScale</span><span class="p">(</span><span class="n">gray</span><span class="p">,</span> <span class="n">minSize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">))</span>
+            <span class="n">svg_document</span> <span class="o">=</span> <span class="n">svgwrite</span><span class="o">.</span><span class="n">Drawing</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;1280px&quot;</span><span class="p">,</span> <span class="s2">&quot;720px&quot;</span><span class="p">))</span>
+            <span class="n">svg_document</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">svg_document</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span>
+                             <span class="n">insert</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                             <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;1280px&quot;</span><span class="p">,</span> <span class="s2">&quot;720px&quot;</span><span class="p">),</span>
+                             <span class="n">stroke_width</span><span class="o">=</span><span class="s2">&quot;10&quot;</span><span class="p">,</span>
+                             <span class="n">stroke</span><span class="o">=</span><span class="s2">&quot;green&quot;</span><span class="p">,</span>
+                             <span class="n">fill</span><span class="o">=</span><span class="s2">&quot;rgb(0,0,0)&quot;</span><span class="p">,</span>
+                             <span class="n">fill_opacity</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                             <span class="p">)</span>
+            
+            <span class="k">for</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span> <span class="ow">in</span> <span class="n">faces</span><span class="p">:</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+                <span class="n">svg_document</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">svg_document</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span>
+                                 <span class="n">insert</span><span class="o">=</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span>
+                                 <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">px&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">w</span><span class="p">),</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">px&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">h</span><span class="p">)),</span>
+                                 <span class="n">stroke_width</span><span class="o">=</span><span class="s2">&quot;10&quot;</span><span class="p">,</span>
+                                 <span class="n">stroke</span><span class="o">=</span><span class="s2">&quot;yellow&quot;</span><span class="p">,</span>
+                                 <span class="n">fill</span><span class="o">=</span><span class="s2">&quot;rgb(0,0,0)&quot;</span><span class="p">,</span>
+                                 <span class="n">fill_opacity</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                                 <span class="p">)</span>
+            <span class="n">redis_db</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;overlay&#39;</span><span class="p">,</span> <span class="n">svg_document</span><span class="o">.</span><span class="n">tostring</span><span class="p">())</span>
+
+        <span class="n">process_this_frame</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">process_this_frame</span>
+       
+        <span class="n">key</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">waitKey</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span>
+
+        <span class="c1"># if the `q` key was pressed, break from the loop</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="nb">ord</span><span class="p">(</span><span class="s2">&quot;q&quot;</span><span class="p">):</span>
+            <span class="k">break</span></div>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">stream_url</span> <span class="o">=</span> <span class="s2">&quot;http://127.0.0.1:8090/pattern.webm&quot;</span>
+    <span class="c1"># stream_url = &quot;http://52.23.243.107:8090/pattern.webm&quot;</span>
+    <span class="c1"># write_svg_haar(stream_url)</span>
+    <span class="n">write_svg_facenet_emb</span><span class="p">(</span><span class="n">stream_url</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Pelicam</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../authors.html">Authors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reqs.html">Requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Code Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../code.html">Auto Generated Code Documentation</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Pelicam Team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

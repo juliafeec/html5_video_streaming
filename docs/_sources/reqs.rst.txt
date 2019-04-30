@@ -1,0 +1,49 @@
+Requirements
+============
+
+**Dependencies:**
+  - ca-certificates=2019.1.23=0
+  - certifi=2019.3.9=py36_0
+  - click=7.0=py36_0
+  - flask=1.0.2=py36_1
+  - itsdangerous=1.1.0=py36_0
+  - jinja2=2.10=py36_0
+  - libedit=3.1.20181209=hc058e9b_0
+  - libffi=3.2.1=hd88cf55_4
+  - libgcc-ng=8.2.0=hdf63c60_1
+  - libstdcxx-ng=8.2.0=hdf63c60_1
+  - markupsafe=1.1.1=py36h7b6447c_0
+  - ncurses=6.1=he6710b0_1
+  - openssl=1.1.1b=h7b6447c_1
+  - pip=19.0.3=py36_0
+  - python=3.6.8=h0371630_0
+  - readline=7.0=h7b6447c_5
+  - setuptools=40.8.0=py36_0
+  - sqlite=3.27.2=h7b6447c_0
+  - tk=8.6.8=hbc83047_0
+  - werkzeug=0.14.1=py36_0
+  - wheel=0.33.1=py36_0
+  - xz=5.2.4=h14c3975_4
+  - zlib=1.2.11=h7b6447c_3
+  - absl-py==0.7.1
+  - astor==0.7.1
+  - boto==2.49.0
+  - flask-wtf==0.14.2
+  - gast==0.2.2
+  - grpcio==1.19.0
+  - h5py==2.9.0
+  - imutils==0.5.2
+  - markdown==3.1
+  - numpy==1.14.5
+  - opencv-contrib-python==4.0.1.24
+  - pillow==6.0.0
+  - protobuf==3.7.1
+  - pyparsing==2.4.0
+  - redis==3.2.1
+  - scikit-learn==0.20.3
+  - scipy==1.2.1
+  - six==1.12.0
+  - sklearn==0.0
+  - svgwrite==1.2.1
+  - termcolor==1.1.0
+  - wtforms==2.2.1

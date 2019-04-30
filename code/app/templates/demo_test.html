@@ -1,0 +1,38 @@
+<html>
+  <head>
+    <style>
+    #vid {
+    display: inline-block;
+    width: 100% !important;
+    height: auto;
+    }
+    #image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: none;
+    }
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+    <title>Realtime communication with WebRTC</title>
+  </head>
+    <body>
+        <h1>Realtime communication with WebRTC</h1>
+        <div id="videoCanvas"></div>
+            <video id="camera" autoplay playsinline></video>
+            <img id="image" src='data:image/svg+xml;utf8,<svg baseProfile="full" height="720px" version="1.1" width="1280px" xmlns="http://www.w3.org/2000/svg" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xlink="http://www.w3.org/1999/xlink"><defs /><rect fill="rgb(0,0,0)" fill-opacity="0" height="720px" stroke="green" stroke-width="10" width="1280px" x="0" y="0" /></svg>' />
+            <canvas id="photo"></canvas>
+        </div>
+
+        <p>Screenshots:</p>
+        <canvas  id="myCanvas" width="400" height="350"></canvas> 
+        <!-- <img id="image" src='data:image/svg+xml;utf8,<svg baseProfile="full" height="720px" version="1.1" width="1280px" xmlns="http://www.w3.org/2000/svg" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xlink="http://www.w3.org/1999/xlink"><defs /><rect fill="rgb(0,0,0)" fill-opacity="0" height="720px" stroke="green" stroke-width="10" width="1280px" x="0" y="0" /></svg>' /> -->
+        <div id="buttons">
+            <button id="startwebcam">Start Web Cam</button>
+        </div>
+        <p>Overlay</p>
+        <!-- <img id="image" src='data:image/svg+xml;utf8,<svg baseProfile="full" height="720px" version="1.1" width="1280px" xmlns="http://www.w3.org/2000/svg" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xlink="http://www.w3.org/1999/xlink"><defs /><rect fill="rgb(0,0,0)" fill-opacity="0" height="720px" stroke="green" stroke-width="10" width="1280px" x="0" y="0" /></svg>' /> -->
+
+    </body>
+    <script src="{{ url_for('static', filename='js/capture_webcam.js') }}"></script>
+</html>

@@ -1,0 +1,164 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Auto Generated Code Documentation &#8212; Pelicam 0.1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Code Tutorial" href="tutorial.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="auto-generated-code-documentation">
+<h1>Auto Generated Code Documentation<a class="headerlink" href="#auto-generated-code-documentation" title="Permalink to this headline">¶</a></h1>
+<p>created on April 12, 2019</p>
+<p>&#64;author: Fiorella Tenorio, Chris Olley, Luke Qi, Randy Ma, Byron Han, Julia Tavares</p>
+<span class="target" id="module-app"></span><span class="target" id="module-face_detection_process"></span><dl class="function">
+<dt id="face_detection_process.align_face">
+<code class="descclassname">face_detection_process.</code><code class="descname">align_face</code><span class="sig-paren">(</span><em>img</em>, <em>pnet</em>, <em>rnet</em>, <em>onet</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/face_detection_process.html#align_face"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#face_detection_process.align_face" title="Permalink to this definition">¶</a></dt>
+<dd><p>Detect and align faces from a frame, returning the detected faces and
+the bounding boxes for the faces.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="face_detection_process.identify_person">
+<code class="descclassname">face_detection_process.</code><code class="descname">identify_person</code><span class="sig-paren">(</span><em>image_vector</em>, <em>feature_names</em>, <em>feature_np</em>, <em>k=9</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/face_detection_process.html#identify_person"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#face_detection_process.identify_person" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the Euclidean distance between a face embedding and the
+stored embeddings, returning the identity of the stored embedding most
+similar to the face embedding and the distance between these embeddings.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="face_detection_process.load_img">
+<code class="descclassname">face_detection_process.</code><code class="descname">load_img</code><span class="sig-paren">(</span><em>img</em>, <em>do_random_crop</em>, <em>do_random_flip</em>, <em>image_size</em>, <em>do_prewhiten=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/face_detection_process.html#load_img"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#face_detection_process.load_img" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process the captured images from the webcam, prewhitening, cropping and
+flipping as required. Returns processed image.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="face_detection_process.write_svg_facenet">
+<code class="descclassname">face_detection_process.</code><code class="descname">write_svg_facenet</code><span class="sig-paren">(</span><em>stream_url</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/face_detection_process.html#write_svg_facenet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#face_detection_process.write_svg_facenet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads an alternative facenet model, and connects to the in-memory Redis 
+database. Detects faces (no identification) in the specified stream and 
+calculates the corresponding bounding boxes. Writes the bounding boxes for
+all detected faces to an svg overlay which is then saved to
+Redis to be accessed by other processes.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="face_detection_process.write_svg_facenet_emb">
+<code class="descclassname">face_detection_process.</code><code class="descname">write_svg_facenet_emb</code><span class="sig-paren">(</span><em>stream_url</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/face_detection_process.html#write_svg_facenet_emb"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#face_detection_process.write_svg_facenet_emb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads the facenet model and the saved embeddings from disk, and connects to
+the in-memory Redis database. Detects faces in the specified stream and
+calculates the corresponding bounding boxes. Writes the bounding boxes for
+all detected and identified faces to an svg overlay which is then saved to
+Redis to be accessed by other processes.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="face_detection_process.write_svg_haar">
+<code class="descclassname">face_detection_process.</code><code class="descname">write_svg_haar</code><span class="sig-paren">(</span><em>stream_url</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/face_detection_process.html#write_svg_haar"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#face_detection_process.write_svg_haar" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads an alternative face detection model, and connects to the in-memory 
+Redis database. Detects faces (no identification) in the specified stream 
+and calculates the corresponding bounding boxes. Writes the bounding boxes 
+for all detected faces to an svg overlay which is then saved to
+Redis to be accessed by other processes.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Pelicam</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="authors.html">Authors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reqs.html">Requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Code Tutorial</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Auto Generated Code Documentation</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="tutorial.html" title="previous chapter">Code Tutorial</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Pelicam Team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/code.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

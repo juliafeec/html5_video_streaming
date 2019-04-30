@@ -1,0 +1,20 @@
+<html>
+  <body>
+    <table>
+      <thead>
+        <tr>
+          <th>Filename</th>
+          <th>Time</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for item in items %}
+      <tr>
+        <td> <a href="/list/{{ item[0] }}">{{ item[0] }}</a></td>
+        <td> {{ item[1] }} </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </body>
+</html>

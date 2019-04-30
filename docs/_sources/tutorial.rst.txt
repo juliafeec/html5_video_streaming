@@ -1,0 +1,11 @@
+Code Tutorial
+================
+-	Set up AWS EC2 instance with the following configurations:
+
+    -	AMI: Ubuntu Server 16.04 LTS (HVM)
+
+    -	General Purpose, t3.xlarge, 4 CPUs, 16GB memory, 30GB General Purpose SSD
+
+    -	Open port number: 22, 5001, 8080, 8090 with tcp protocol and 0.0.0.0/0 source
+
+-	Run python deploy.py on your terminal   
