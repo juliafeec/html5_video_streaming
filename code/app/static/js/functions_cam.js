@@ -6,7 +6,8 @@ function readURL(input) {
     reader.onload = function(e) {
       $('.image-upload-wrapPopUp').hide();
 
-      $('.file-uploaded-image').attr('src', e.target.result);
+      // To be changed by a slide show
+      // $('.file-uploaded-image').attr('src', e.target.result);
       $('.image-showIn-wrapPopUp').show();
 
       //$('.image-title').html(input.files[0].name);

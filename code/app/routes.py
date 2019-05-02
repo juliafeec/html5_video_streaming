@@ -92,8 +92,9 @@ def main_page():
     """Main page of the application"""
     if request.method == "POST":
         name = request.form['name']
-        imgFile = request.files['img_file']
-        upload(name, imgFile)
+        listofFiles = request.files.getlist("img_file")
+        # we need to call upload here
+        upload(listofFiles)
     return render_template("main_page2.html")
 
 
