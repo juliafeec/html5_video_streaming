@@ -4,7 +4,7 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired
 from wtforms import SubmitField
 from werkzeug import secure_filename
-from flask_login import login_user
+from flask_login import login_user, login_required
 
 from boto.s3.key import Key
 import boto
@@ -89,6 +89,7 @@ def new_user_form():
 
 
 @application.route('/main_page', methods=['GET', 'POST'])
+@login_required
 def main_page():
     """Main page of the application"""
     if request.method == "POST":
@@ -143,6 +144,12 @@ def demo():
 def test_stream():
     """Web for test stream"""
     return render_template("main_page_demo.html")
+
+
+@application.errorhandler(401)
+def unauthorized(e):
+    """Handle login errors"""
+    return redirect(url_for('login'))
 
 
 @application.route('/', methods=['GET', 'POST'])
