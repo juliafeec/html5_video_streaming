@@ -33,30 +33,31 @@ class UploadFileForm(FlaskForm):
     submit = SubmitField('Submit')
 
 
-def upload(name, file):
+def upload(name, listfile):
     """upload a file from a client machine."""
-    filename = secure_filename(file.filename)
-    file_content = file.stream.read()
-
-
-    counter[name]+=1
-    filename_extension = filename.rsplit(".")[1]
-    filename = "{}_{}.{}".format(name, counter[name], filename_extension)
-
-    with open("photos/" + filename, 'wb') as f:
-        f.write(file_content)
-  
-    redis_db.set('create_embs', 1)
-
-    bucket_name = 'msds603camera' # Change it to your bucket.
-    s3_connection = boto.connect_s3(aws_access_key_id=key_id,
-                                    aws_secret_access_key=access_key)
-    bucket = s3_connection.get_bucket(bucket_name)
-    k = Key(bucket)
-    k.key = filename
-    k.set_contents_from_string(file_content)
-    key = bucket.lookup(filename)
-    key.set_acl('public-read-write')
+    for file in listfile:
+        filename = secure_filename(file.filename)
+        file_content = file.stream.read()
+    
+    
+        counter[name]+=1
+        filename_extension = filename.rsplit(".")[1]
+        filename = "{}_{}.{}".format(name, counter[name], filename_extension)
+    
+        with open("photos/" + filename, 'wb') as f:
+            f.write(file_content)
+      
+        redis_db.set('create_embs', 1)
+    
+        bucket_name = 'msds603camera' # Change it to your bucket.
+        s3_connection = boto.connect_s3(aws_access_key_id=key_id,
+                                        aws_secret_access_key=access_key)
+        bucket = s3_connection.get_bucket(bucket_name)
+        k = Key(bucket)
+        k.key = filename
+        k.set_contents_from_string(file_content)
+        key = bucket.lookup(filename)
+        key.set_acl('public-read-write')
 
 
 @application.route('/new_user_form', methods=['GET', 'POST'])
@@ -94,7 +95,7 @@ def main_page():
         name = request.form['name']
         listofFiles = request.files.getlist("img_file")
         # we need to call upload here
-        upload(listofFiles)
+        upload(name, listofFiles)
     return render_template("main_page2.html")
 
 
