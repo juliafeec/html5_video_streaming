@@ -15,6 +15,7 @@ import redis
 import pickle
 from collections import Counter
 from user_definition import key_id, access_key
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -49,15 +50,15 @@ def upload(name, listfile):
       
         redis_db.set('create_embs', 1)
     
-        bucket_name = 'msds603camera' # Change it to your bucket.
-        s3_connection = boto.connect_s3(aws_access_key_id=key_id,
-                                        aws_secret_access_key=access_key)
-        bucket = s3_connection.get_bucket(bucket_name)
-        k = Key(bucket)
-        k.key = filename
-        k.set_contents_from_string(file_content)
-        key = bucket.lookup(filename)
-        key.set_acl('public-read-write')
+        #bucket_name = 'msds603camera' # Change it to your bucket.
+        #s3_connection = boto.connect_s3(aws_access_key_id=key_id,
+        #                                aws_secret_access_key=access_key)
+        #bucket = s3_connection.get_bucket(bucket_name)
+        #k = Key(bucket)
+        #k.key = filename
+        #k.set_contents_from_string(file_content)
+        #key = bucket.lookup(filename)
+        #key.set_acl('public-read-write')
 
 
 @application.route('/new_user_form', methods=['GET', 'POST'])
@@ -95,7 +96,9 @@ def main_page():
         name = request.form['name']
         listofFiles = request.files.getlist("img_file")
         # we need to call upload here
+        print(datetime.now())
         upload(name, listofFiles)
+        print(datetime.now())
     return render_template("main_page2.html")
 
 

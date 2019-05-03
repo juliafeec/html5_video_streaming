@@ -21,6 +21,13 @@ from scipy import misc
 from scipy.spatial.distance import cdist
 from imutils.video import FileVideoStream
 from glob import glob
+import time
+
+from boto.s3.key import Key
+import boto
+import boto3
+from base64 import b64decode
+from user_definition import key_id, access_key
 
 def load_img(img, do_random_crop, do_random_flip, image_size,
              do_prewhiten=True):
@@ -218,8 +225,10 @@ def write_svg_facenet_emb(stream_url):
 
         #fvs = FileVideoStream(stream_url, queue_size=1).start()
         use_fvs = False
+        use_buffer = True
+
         if use_fvs:
-            fvs = FileVideoStream(stream_url, queue_size=1).start()
+            fvs = FileVideoStream(stream_url, queue_size=30).start()
         else:
             capture = cv2.VideoCapture(stream_url)
 
@@ -272,27 +281,42 @@ def write_svg_facenet_emb(stream_url):
                 redis_db.set('overlay', svg_string)
 
                 print("create embs now")
-                filenames = glob("/home/ubuntu/Pelicam/code/photos/*")
+                filenames = glob("photos/*")
                 success_filenames, aligned_images = load_and_align_data(filenames)
+                print("success filenames \n\n\n\n\n\n")
+                print(success_filenames)
                 
+                bucket_name = 'msds603camera' # Change it to your bucket.
+                s3_connection = boto.connect_s3(aws_access_key_id=key_id,
+                                                aws_secret_access_key=access_key)
+                bucket = s3_connection.get_bucket(bucket_name)
                 for fname, img in zip(success_filenames, aligned_images):
+                    print("start run emb")
                     images = resize_image(img, image_size)
                     feed_dict = { images_placeholder:images, phase_train_placeholder:False }
                     feature_vector = sess.run(embeddings, feed_dict=feed_dict)
                     name, count = fname.split("/")[-1].rsplit(".")[0].split("_")
                     feature_dict["{}_{}".format(name, count)] =  feature_vector
-                    
-                    print("writing")
-                    
-                    with open('extracted_dict.pickle','wb') as f:
-                        pickle.dump(feature_dict, f)
-                        
-                    print("done writing")
+                    print("removing photo")
+
+                    k = Key(bucket)
+                    k.key = fname
+                    #k.set_contents_from_string(file_content)
+                    k.set_contents_from_filename(fname)
+                    key = bucket.lookup(fname)
+                    key.set_acl('public-read-write')
+                    os.remove(fname)
+
+                print("writing")
                 
-                    feed_dict = {images_placeholder: images,
-                                     phase_train_placeholder: False}
-                    print("start run emb")
-                    feature_vector = sess.run(embeddings, feed_dict=feed_dict)
+                with open('extracted_dict.pickle','wb') as f:
+                    pickle.dump(feature_dict, f)
+                    
+                print("done writing")
+                
+                    #feed_dict = {images_placeholder: images,
+                    #                 phase_train_placeholder: False}
+                    #feature_vector = sess.run(embeddings, feed_dict=feed_dict)
 
 
                 feature_names = np.array(list(feature_dict.keys()))
@@ -302,6 +326,9 @@ def write_svg_facenet_emb(stream_url):
                 redis_db.set('create_embs', '')
                     
                 print("done creating embs")
+                if use_buffer:
+                    print("reopening capture")
+                    capture = cv2.VideoCapture(stream_url)
 
 
 
@@ -310,6 +337,13 @@ def write_svg_facenet_emb(stream_url):
                 if not fvs.more():
                     continue
                 frame = fvs.read()
+            elif use_buffer:
+                print("capture frame with cv2 buffer")
+                time.sleep(1)
+                for i in range(50):
+                    capture.grab()
+
+                ret, frame = capture.read()
             else:
                 print("capture frame with cv2")
                 capture = cv2.VideoCapture(stream_url)
@@ -356,7 +390,7 @@ def write_svg_facenet_emb(stream_url):
                     print("calculate svg")
                     #if distance < 1.0:
 
-                    if (1-distance) > 0.15:
+                    if (1-distance) > 0.20:
                         print("name: {} distance: {} text: {}".format(result, distance, 1-distance))
                         startX = bb[0]
                         startY = bb[1]
