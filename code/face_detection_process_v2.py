@@ -191,7 +191,7 @@ def write_svg_facenet_emb(stream_url):
     print("[INFO] loading model...")
     #with open('extracted_dict.pickle', 'rb') as f:
     # TODO CHANGE THIS
-    with open('extracted_dict_only_fiorella.pickle', 'rb') as f:
+    with open('startup_extracted_dict.pickle', 'rb') as f:
     #with open('byron.pickle', 'rb') as f:
         feature_dict = pickle.load(f)
     
@@ -231,6 +231,7 @@ def write_svg_facenet_emb(stream_url):
             fvs = FileVideoStream(stream_url, queue_size=30).start()
         else:
             capture = cv2.VideoCapture(stream_url)
+            print("got capture")
 
         # capture = cv2.VideoCapture(stream_url)
         while(True):
@@ -259,6 +260,7 @@ def write_svg_facenet_emb(stream_url):
                  fill_opacity=0)
                  )
 
+                #text_style = "font-size:40px; font-family:Courier New;\
                 text_style = "font-size:70px; font-family:Courier New;\
                       fill:rgb(255,0,0); "
                 svg_document.add(svg_document.text(
@@ -286,10 +288,10 @@ def write_svg_facenet_emb(stream_url):
                 print("success filenames \n\n\n\n\n\n")
                 print(success_filenames)
                 
-                bucket_name = 'msds603camera' # Change it to your bucket.
-                s3_connection = boto.connect_s3(aws_access_key_id=key_id,
-                                                aws_secret_access_key=access_key)
-                bucket = s3_connection.get_bucket(bucket_name)
+                #bucket_name = 'msds603camera' # Change it to your bucket.
+                #s3_connection = boto.connect_s3(aws_access_key_id=key_id,
+                #                                aws_secret_access_key=access_key)
+                #bucket = s3_connection.get_bucket(bucket_name)
                 for fname, img in zip(success_filenames, aligned_images):
                     print("start run emb")
                     images = resize_image(img, image_size)
@@ -299,12 +301,11 @@ def write_svg_facenet_emb(stream_url):
                     feature_dict["{}_{}".format(name, count)] =  feature_vector
                     print("removing photo")
 
-                    k = Key(bucket)
-                    k.key = fname
-                    #k.set_contents_from_string(file_content)
-                    k.set_contents_from_filename(fname)
-                    key = bucket.lookup(fname)
-                    key.set_acl('public-read-write')
+                    #k = Key(bucket)
+                    #k.key = fname
+                    #k.set_contents_from_filename(fname)
+                    #key = bucket.lookup(fname)
+                    #key.set_acl('public-read-write')
                     os.remove(fname)
 
                 print("writing")
@@ -331,25 +332,30 @@ def write_svg_facenet_emb(stream_url):
                     capture = cv2.VideoCapture(stream_url)
 
 
+            try: 
+                if use_fvs:
+                    print("capture frame with fvs")
+                    if not fvs.more():
+                        continue
+                    frame = fvs.read()
+                elif use_buffer:
+                    print("capture frame with cv2 buffer")
+                    time.sleep(1)
+                    #time.sleep(2.5)
+                    for i in range(50):
+                        capture.grab()
 
-            if use_fvs:
-                print("capture frame with fvs")
-                if not fvs.more():
-                    continue
-                frame = fvs.read()
-            elif use_buffer:
-                print("capture frame with cv2 buffer")
-                time.sleep(1)
-                for i in range(50):
-                    capture.grab()
+                    ret, frame = capture.read()
+                else:
+                    print("capture frame with cv2")
+                    capture = cv2.VideoCapture(stream_url)
+                    ret, frame = capture.read()
 
-                ret, frame = capture.read()
-            else:
-                print("capture frame with cv2")
-                capture = cv2.VideoCapture(stream_url)
-                ret, frame = capture.read()
+                gray = cv2.cvtColor(frame, 0)
+            except: 
+                #continue
+                raise Exception("capture failed")
 
-            gray = cv2.cvtColor(frame, 0)
             print("converted to gray")
             if gray.size < 0:
                 print("skipping")
@@ -359,17 +365,28 @@ def write_svg_facenet_emb(stream_url):
             response, faces, bboxs = align_face(gray, pnet, rnet, onet)
             print(response)
             print("{} faces found.".format(len(faces)))
-
-            if response is True:
-                svg_document = svgwrite.Drawing(size=(dim1, dim2))
-                svg_document.add(svg_document.rect(
+            svg_document = svgwrite.Drawing(size=(dim1, dim2))
+            svg_document.add(svg_document.rect(
                                  insert=(0, 0),
                                  size=(dim1, dim2),
                                  stroke_width="10",
+                                 #stroke_width="7",
                                  stroke="green",
                                  fill="rgb(0,0,0)",
                                  fill_opacity=0)
                                  )
+
+            if response is True:
+                #svg_document = svgwrite.Drawing(size=(dim1, dim2))
+                #svg_document.add(svg_document.rect(
+                #                 insert=(0, 0),
+                #                 size=(dim1, dim2),
+                #                 stroke_width="10",
+                #                 #stroke_width="7",
+                #                 stroke="green",
+                #                 fill="rgb(0,0,0)",
+                #                 fill_opacity=0)
+                #                 )
                 for i, image in enumerate(faces):
                     # 640 360
                     dim1, dim2 = frame.shape[1], frame.shape[0]
@@ -390,7 +407,7 @@ def write_svg_facenet_emb(stream_url):
                     print("calculate svg")
                     #if distance < 1.0:
 
-                    if (1-distance) > 0.20:
+                    if (1-distance) > 0.15:
                         print("name: {} distance: {} text: {}".format(result, distance, 1-distance))
                         startX = bb[0]
                         startY = bb[1]
@@ -401,12 +418,14 @@ def write_svg_facenet_emb(stream_url):
                                          insert=(int(startX), int(startY)),
                                          size=("{}px".format(box_w),
                                                "{}px".format(box_h)),
-                                         stroke_width="10",
+                                         #stroke_width="10",
+                                         stroke_width="7",
                                          stroke="yellow",
                                          fill="rgb(0,0,0)",
                                          fill_opacity=0)
                                          )
                         text = "{} {:.2f}".format(result, 1-distance)
+                        #text_style = "font-size:30px; font-family:Courier New;\
                         text_style = "font-size:50px; font-family:Courier New;\
                                       stroke:yellow; stroke-width:0.2em;"
                         svg_document.add(svg_document.text(
@@ -416,6 +435,7 @@ def write_svg_facenet_emb(stream_url):
                                          style=text_style)
                                          )
                         
+                        #text_style = "font-size:30px; font-family:Courier New;"
                         text_style = "font-size:50px; font-family:Courier New;"
                         svg_document.add(svg_document.text(
                                          text,
@@ -442,11 +462,18 @@ def write_svg_facenet_emb(stream_url):
                                          )
 
 
-                print("export svg")
-                svg_string = svg_document.tostring()
-                print("write")
-                redis_db.set('overlay', svg_string)
-                print("done")
+               # print("export svg")
+               # svg_string = svg_document.tostring()
+               # print("write")
+               # redis_db.set('overlay', svg_string)
+               # print("done")
+                
+            print("export svg")
+            svg_string = svg_document.tostring()
+            print("write")
+            redis_db.set('overlay', svg_string)
+            print("done")
+
 
 
 def write_svg_facenet(stream_url):

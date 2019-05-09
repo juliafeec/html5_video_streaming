@@ -54,13 +54,22 @@
 				
 				<div class="rightpane" id="listImages">
 
-					<button type="button" id="btnAttachment"
+					<button style="margin-left: 20px;" type="button" id="btnAttachment"
 						 class="loadImage-form-btn" onclick="openRequestedPopup()">
 							Load an Image
 					</button>
 
 					<!-- To be shown by default -->
-					<div class="image-upload-wrap">
+                                        <div id="user_names" style="margin: 20px;">
+                                            <h2>Registered Users:</h2>
+                                            <br>
+                                            <br>
+                                            <br>
+                                            <h3>Name1</h3>
+                                            <h3>Name2</h3>
+                                        </div>
+
+					<div class="image-upload-wrap" hidden>
 						<input class="file-upload-input" type='file' onchange="readURL(this);" accept="image/*" 
 							style="display: none" />
 						<div class="drag-text">
@@ -92,7 +101,7 @@
 								</div>
 
 								<!-- Div that will be shown after your select an image -->
-								<div class="image-showIn-wrapPopUp" align="center">
+								<div class="image-showIn-wrapPopUp" align="center" hidden>
 									<img id="uploaded-image" name="imageUploaded" class="file-uploaded-image" src="#" alt="your image" />
 								</div>
 
@@ -135,16 +144,23 @@ function overlayImage(){
 		$('#image').css(
 			"width", width);
 		$('#image').show();  
+                $.get("/user_names", function(data, status){
+                //$("#user_names").html("<h2>Registered Users:</h2><br><h3>Name1</h3><h3>Name3</h3>");
+                $("#user_names").html(data);
+		});
+
 		$.get("/svg", function(data, status){
 		//alert("Data: " + data + "\nStatus: " + status);
 		$("#image").attr("src", data);
 		setTimeout(overlayImage, 500);
 		//overlayImage();
 		});
+		
      
 	}
 	
 overlayImage();
+
 </script>
 
 

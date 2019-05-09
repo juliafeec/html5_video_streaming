@@ -21,12 +21,22 @@ app = Flask(__name__)
 
 redis_db = redis.StrictRedis(host="localhost", port=6379, db=0)
 
-with open('extracted_dict.pickle','rb') as f:
+#with open('extracted_dict.pickle','rb') as f:
+
+with open('startup_extracted_dict.pickle', 'rb') as f:
     feature_dict = pickle.load(f)
 
 counter = Counter([x.split("_")[0] for x in feature_dict.keys()])
 del feature_dict
 
+def get_user_div(counter):
+    user_div = "<h2>Registered Users:</h2><br><br>"
+    for name in sorted(list(counter.keys())):
+        user_div += "<h3>{}</h3>".format(name.title())
+ 
+    return user_div
+
+user_div_str = get_user_div(counter)
 
 class UploadFileForm(FlaskForm):
     """Class for uploading file when submitted"""
@@ -36,10 +46,12 @@ class UploadFileForm(FlaskForm):
 
 def upload(name, listfile):
     """upload a file from a client machine."""
+    global user_div_str
+
+    name = name.lower()
     for file in listfile:
         filename = secure_filename(file.filename)
         file_content = file.stream.read()
-    
     
         counter[name]+=1
         filename_extension = filename.rsplit(".")[1]
@@ -48,7 +60,9 @@ def upload(name, listfile):
         with open("photos/" + filename, 'wb') as f:
             f.write(file_content)
       
-        redis_db.set('create_embs', 1)
+    redis_db.set('create_embs', 1)
+    user_div_str = get_user_div(counter)
+
     
         #bucket_name = 'msds603camera' # Change it to your bucket.
         #s3_connection = boto.connect_s3(aws_access_key_id=key_id,
@@ -137,6 +151,12 @@ def svg():
     return svg_string
 
 
+@application.route("/user_names")
+def user_names():
+    """Return user names div"""
+    return user_div_str
+
+#<h2>Registered Users:</h2><br><h3>Name1</h3><h3>Name3</h3>
 @application.route("/demo")
 def demo():
     """Web for demo"""
