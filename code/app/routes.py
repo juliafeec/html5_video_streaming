@@ -16,6 +16,9 @@ import pickle
 from collections import Counter
 from user_definition import key_id, access_key
 from datetime import datetime
+import numpy as np
+import base64
+from PIL import Image
 
 app = Flask(__name__)
 
@@ -29,14 +32,53 @@ with open('startup_extracted_dict.pickle', 'rb') as f:
 counter = Counter([x.split("_")[0] for x in feature_dict.keys()])
 del feature_dict
 
-def get_user_div(counter):
-    user_div = "<h2>Registered Users:</h2><br><br>"
+#def get_user_div(counter):
+#    user_div = "<h2>Registered Users:</h2><br><br>"
+#    for name in sorted(list(counter.keys())):
+#        user_div += "<h3>{}</h3>".format(name.title())
+# 
+#    return user_div
+
+#user_div_str = get_user_div(counter)
+
+def save_thumbnail(name, filename):
+  tmp_img = Image.open(filename)
+  #tmp_img.thumbnail((250, 250))
+  tmp_img = tmp_img.resize((250, 250))
+  tmp_img = tmp_img.convert("RGB")
+  tmp_img.save("thumbnails/{}.jpg".format(name))
+
+def get_base64(name):
+    filename = "thumbnails/{}.jpg".format(name)
+    with open(filename, "rb") as f:
+        encoded_string = base64.b64encode(f.read()).decode()
+
+    return "data:image/jpeg;base64," + encoded_string
+
+def get_user_cards(counter):
+
+    user_div = """
+    <div class="card">
+    <div>
+    <div class="content">
+    <button class="btn btn-primary btn-block" data-toggle="modal" data-target="#myModalNorm">
+    Upload Photos 
+    </button>
+    <br><br><br>
+    """
+
     for name in sorted(list(counter.keys())):
-        user_div += "<h3>{}</h3>".format(name.title())
+        user_div += '<div class="author">'
+        img = get_base64(name)
+        user_div += '<img src="{}" class="img-rounded img-responsive">'.format(img)
+        #        user_div += '<h4>{}<br></h4>'.format(name.title())
+        user_div += '<h4 class="text-center text-capitalize">{}</h4>'.format(name.title())
+        user_div += '</div><br>'
+    
+    user_div += "</div>"
  
     return user_div
 
-user_div_str = get_user_div(counter)
 
 class UploadFileForm(FlaskForm):
     """Class for uploading file when submitted"""
@@ -46,9 +88,14 @@ class UploadFileForm(FlaskForm):
 
 def upload(name, listfile):
     """upload a file from a client machine."""
-    global user_div_str
+    #global user_div_str, counter
+    global counter
 
+    print("here upload")
     name = name.lower()
+    print(name)
+    print(listfile)
+
     for file in listfile:
         filename = secure_filename(file.filename)
         file_content = file.stream.read()
@@ -59,9 +106,15 @@ def upload(name, listfile):
     
         with open("photos/" + filename, 'wb') as f:
             f.write(file_content)
+
+        print("counter")
+        print(counter[name])
+        if counter[name] == 1:
+            save_thumbnail(name, "photos/{}".format(filename))
+
       
     redis_db.set('create_embs', 1)
-    user_div_str = get_user_div(counter)
+    #user_div_str = get_user_div(counter)
 
     
         #bucket_name = 'msds603camera' # Change it to your bucket.
@@ -102,6 +155,15 @@ def new_user_form():
 
     return render_template("index_newform.html")
 
+@application.route('/video', methods=["GET", "POST"])
+@login_required
+def video():
+    return render_template("notifications.html", user_cards=get_user_cards(counter))
+
+@application.route('/dash', methods=["GET"])
+@login_required
+def dash():
+    return render_template("dashboard.html")
 
 @application.route('/main_page', methods=['GET', 'POST'])
 @login_required
@@ -115,6 +177,15 @@ def main_page():
         upload(name, listofFiles)
         print(datetime.now())
     return render_template("main_page2.html")
+
+
+@application.route('/file_upload', methods=['POST'])
+@login_required
+def file_upload():
+    name = request.form['name']
+    listofFiles = request.files.getlist("img_file")
+    upload(name, listofFiles)
+    return get_user_cards(counter)
 
 
 @application.route('/list', methods=['GET', 'POST'])
@@ -151,10 +222,10 @@ def svg():
     return svg_string
 
 
-@application.route("/user_names")
-def user_names():
-    """Return user names div"""
-    return user_div_str
+#@application.route("/user_names")
+#def user_names():
+#    """Return user names div"""
+#    return user_div_str
 
 #<h2>Registered Users:</h2><br><h3>Name1</h3><h3>Name3</h3>
 @application.route("/demo")
@@ -189,7 +260,9 @@ def login():
         # Login and validate the user.
         if user is not None and user.check_password(password):
             login_user(user)
-            return redirect(url_for("main_page"))
+            #return redirect(url_for("main_page"))
+            #return redirect(url_for("video"))
+            return redirect(url_for("dash"))
         else:
             flash("Invalid username and password combination!")
             return render_template("login.html")

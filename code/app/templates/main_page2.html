@@ -136,7 +136,8 @@ function overlayImage(){
 		var height = $("#vid").height();
 		var width = $("#vid").width();
 		var top = $("#vid").offset().top;
-		var left = $("#vid").offset().left;
+		//var left = $("#vid").offset().left;
+		var left = $("#vid").offset().left - $('.nav').width();
 		$('#image').css(
 			"height", height);
 		$('#image').css("top", top);

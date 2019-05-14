@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<link rel="icon" type="image/png" href="/static/images/icons/Pelicam_icon.png">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+
+	<title>Pelicam</title>
+
+	<meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
+    <meta name="viewport" content="width=device-width" />
+
+
+    <!-- Bootstrap core CSS     -->
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet" />
+
+    <!-- Animation library for notifications   -->
+    <link href="/static/css/animate.min.css" rel="stylesheet"/>
+
+    <!--  Light Bootstrap Table core CSS    -->
+    <link href="/static/css/light-bootstrap-dashboard.css?v=1.4.0" rel="stylesheet"/>
+
+    <!--     Fonts and icons     -->
+    <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href='http://fonts.googleapis.com/css?family=Roboto:400,700,300' rel='stylesheet' type='text/css'>
+    <link href="/static/css/pe-icon-7-stroke.css" rel="stylesheet" />
+    
+    <style>
+             #vid {
+     display: inline-block;
+     width: 100% !important;
+     height: auto;
+     //width: 90% !important;
+     //height: auto;
+     //height: 100% !important;
+     //width: auto;
+     }
+     #image {
+     position: absolute;
+     top: 0;
+     left: 0;
+     display: none;
+     }
+     .btn-file {
+         position: relative;
+         overflow: hidden;
+     }
+     .btn-file input[type=file] {
+         position: absolute;
+         top: 0;
+         right: 0;
+         min-width: 100%;
+         min-height: 100%;
+         font-size: 100px;
+         text-align: right;
+         filter: alpha(opacity=0);
+         opacity: 0;
+         outline: none;
+         background: white;
+         cursor: inherit;
+         display: block;
+     }
+     
+     #img-upload{
+         width: 200px;
+     }
+
+     .modal-backdrop.in { z-index: auto;}
+     .modal-body { margin: 20px;}
+
+     </style>
+
+        <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-139067801-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'UA-139067801-1');
+</script>
+
+
+        <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-139067801-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'UA-139067801-1');
+</script>
+
+
+
+</head>
+<body>
+
+<div class="wrapper">
+  <div class="sidebar" data-color="purple" data-image="assets/img/sidebar-5.jpg">
+
+    <!--   you can change the color of the sidebar using: data-color="blue | azure | green | orange | red | purple" -->
+
+
+    	<div class="sidebar-wrapper">
+            <div class="logo">
+                <a href="" class="simple-text">
+                    Pelicam
+                </a>
+            </div>
+
+            <ul class="nav">
+                <li class="active">
+                    <a href="/video">
+                        <i class="pe-7s-video"></i>
+                        <p>Video</p>
+                    </a>
+                </li>
+                <li>
+                    <a href="user.html">
+                        <i class="pe-7s-user"></i>
+                        <p>User Profile</p>
+                    </a>
+                </li>
+                                <li>
+                    <a href="notifications.html">
+                        <i class="pe-7s-bell"></i>
+                        <p>Notifications</p>
+                    </a>
+                </li>
+				<li class="active-pro">
+                    <a href="upgrade.html">
+                        <i class="pe-7s-rocket"></i>
+                        <p>Upgrade to PRO</p>
+                    </a>
+                </li>
+            </ul>
+    	</div>
+    </div>
+
+      <div class="main-panel">
+		<nav class="navbar navbar-default navbar-fixed">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navigation-example-2">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="#"></a>
+                </div>
+                <div class="collapse navbar-collapse">
+                    <ul class="nav navbar-nav navbar-left">
+                        <li class="dropdown">
+                              <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                    <i class="fa fa-globe"></i>
+                                    <b class="caret hidden-sm hidden-xs"></b>
+                                    <span class="notification hidden-sm hidden-xs">5</span>
+									<p class="hidden-lg hidden-md">
+										5 Notifications
+										<b class="caret"></b>
+									</p>
+                              </a>
+                              <ul class="dropdown-menu">
+                                <li><a href="#">Notification 1</a></li>
+                                <li><a href="#">Notification 2</a></li>
+                                <li><a href="#">Notification 3</a></li>
+                                <li><a href="#">Notification 4</a></li>
+                                <li><a href="#">Another notification</a></li>
+                              </ul>
+                        </li>
+                        
+                    </ul>
+
+                    <ul class="nav navbar-nav navbar-right">
+                        <li>
+                           <a href="">
+                               <p>Account</p>
+                            </a>
+                        </li>
+                        <li class="dropdown">
+                              <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                    <p>
+										Settings
+										<b class="caret"></b>
+									</p>
+
+                              </a>
+                              <ul class="dropdown-menu">
+                                <li><a href="#">Action</a></li>
+                                <li><a href="#">Another action</a></li>
+                                <li><a href="#">Something</a></li>
+                                <li><a href="#">Another action</a></li>
+                                <li><a href="#">Something</a></li>
+                                <li class="divider"></li>
+                                <li><a href="#">Separated link</a></li>
+                              </ul>
+                        </li>
+                        <li>
+                            <a href="#">
+                                <p>Log out</p>
+                            </a>
+                        </li>
+						<li class="separator hidden-lg hidden-md"></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Modal -->
+        <div class="modal fade" id="myModalNorm" tabindex="-1" role="dialog" 
+           aria-labelledby="myModalLabel" aria-hidden="true">
+           <div class="modal-dialog">
+              <div class="modal-content">
+                 <!-- Modal Header -->
+                 <div class="modal-header">
+                    <button type="button" class="close" 
+                       data-dismiss="modal">
+                    <span aria-hidden="true">&times;</span>
+                    <span class="sr-only">Close</span>
+                    </button>
+                    <h4 class="modal-title" id="myModalLabel">
+                       Add New Person
+                    </h4>
+                 </div>
+                 <form method="POST" class="form-horizontal" id="form">
+                    <!-- Modal Body -->
+                    <div class="modal-body">
+                       <div class="form-group">
+                          <div class="control-group">
+                             <label class="control-label" for="name"><h5 class="title">Name of Person</h5></label>
+                             <div class="controls">
+                                <input type="text" name="name" id="name" placeholder="Name of Person">
+                             </div>
+                          </div>
+                       </div>
+                       <div class="form-group">
+                          <div class="input-group">
+                             <div class="control-group">
+                                <label class="control-label" for="img_file"><h5 class="title">Photos</h5></label>
+                                <span class="input-group-btn">
+                                <span class="btn btn-default btn-file">
+                                Browse… <input type="file" class="file-upload-input"  id="img_file" name="img_file" accept="image/*" multiple>
+                                </span>
+                                </span>
+                                <input type="text" name="filename" id="filename" class="form-control" readonly>
+                             </div>
+                             <img id='img-upload'/>
+                          </div>
+                       </div>
+                       <input name="imageUp" type="file" style="display: none">
+                    </div>
+                    <!-- Modal Footer -->
+                    <div class="modal-footer">
+                       <div class="form-actions">
+                          <input type="hidden" name="save" value="contact">
+                          <button type="submit" id="submit_btn" class="btn btn-success">Submit</button>
+                          <button type="reset" id="clear_btn" class="btn btn-danger">Clear</button>
+                          <button type="button" class="btn btn-default"
+                             data-dismiss="modal">
+                          Close
+                          </button>
+                       </div>
+                    </div>
+                 </form>
+              </div>
+           </div>
+        </div>
+        <!-- End Modal -->
+ 
+
+
+        <div class="content">
+            <div class="container-fluid">
+              <div class="col-md-10">
+                <div class="card">
+                    <div class="header">
+                        <h4 class="title">Stream</h4>
+                    </div>
+                    <div class="content">
+                       <!-- <div class="row"> -->
+                       <div class="row">
+                                    <video id="vid" autoplay muted>
+                                       <source src="http://ec2-13-57-20-231.us-west-1.compute.amazonaws.com:8090/pattern.webm">
+                                    </video>
+                                    <img id="image" src='data:image/svg+xml;utf8,<svg baseProfile="full" height="720px" version="1.1" width="1280px" xmlns="http://www.w3.org/2000/svg" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xlink="http://www.w3.org/1999/xlink"><defs /><rect fill="rgb(0,0,0)" fill-opacity="0" height="720px" stroke="green" stroke-width="10" width="1280px" x="0" y="0" /></svg>' />
+               
+                       <!-- </div> -->          
+                       </div>          
+                        <br>            
+                        <br>            
+                                        
+                    </div>              
+                    </div>              
+                </div>    
+
+
+
+                      <div class="col-md-2" id="user_photos">
+                          {{ user_cards|safe }}
+                                       
+                                        
+                                        
+                      </div>    
+            </div>                      
+</div>
+
+
+</body>
+
+        <!--   Core JS Files   -->
+    <script src="static/js/jquery.3.2.1.min.js" type="text/javascript"></script>
+	<script src="static/js/bootstrap.min.js" type="text/javascript"></script>
+	<script src="static/js/jquery.validate.min.js" type="text/javascript"></script>
+	<script src="static/js/demo.js" type="text/javascript"></script>
+
+    <!--  Notifications Plugin    -->
+    <script src="static/js/bootstrap-notify.js"></script>
+    <script type = "text/javascript" src = "{{ url_for('static', filename='js/functions_cam.js') }}" ></script>
+    <script>
+    function overlayImage(){
+                var height = $("#vid").height();
+                var width = $("#vid").width();
+                //var top = $("#vid").offset().top;
+                var top = $("#vid").offset().top - $('.col-md-10').offset().top;
+                //var left = $("#vid").offset().left;
+                //var left = $("#vid").offset().left - $('.nav').width();
+                var left = $("#vid").offset().left - $('.col-md-10').offset().left;
+                $('#image').css(
+                        "height", height);
+                $('#image').css("top", top);
+                $('#image').css("left", left);
+                $('#image').css(
+                        "width", width);
+                $('#image').show();  
+                //$.get("/user_names", function(data, status){
+                //$("#user_names").html("<h2>Registered Users:</h2><br><h3>Name1</h3><h3>Name3</h3>");
+                //$("#user_names").html(data);
+                //});
+
+                $.get("/svg", function(data, status){
+                //alert("Data: " + data + "\nStatus: " + status);
+                $("#image").attr("src", data);
+                setTimeout(overlayImage, 500);
+                //overlayImage();
+                });
+                
+     
+        }
+      
+    setTimeout(overlayImage,7000);  
+    //overlayImage();
+    
+   $(document).ready(function (event) {
+   	$(document).on('change', '.btn-file :file', function() {
+		var input = $(this),
+			label = input.val().replace(/\\/g, '/').replace(/.*\//, '');
+		input.trigger('fileselect', [label]);
+		});
+		$('.btn-file :file').on('fileselect', function(event, label) {
+		    var input = $(this).parents('.input-group').find(':text'),
+		        log = label;
+		    if( input.length ) {
+		        input.val(log);
+		    } else {
+		        if( log ) alert(log);
+		    }
+		});
+		function readURL(input) {
+		    if (input.files && input.files[0]) {
+		        var reader = new FileReader();
+		        reader.onload = function (e) {
+		            $('#img-upload').attr('src', e.target.result);
+		        }
+		        reader.readAsDataURL(input.files[0]);
+		    }
+		}
+    
+    $("#img_file").change(function(){
+		    readURL(this);
+		}); 
+    
+
+    $('#form').validate({
+        rules: {
+            name: {
+                minlength: 2,
+                required: true
+            },
+            filename: {
+                minlength: 2,
+                required: true
+            }
+        },
+        highlight: function (element) {
+            $(element).closest('.control-group').removeClass('success').addClass('error');
+        },
+        success: function (element) {
+            element.text('').addClass('valid')
+                .closest('.control-group').removeClass('error').addClass('success');
+        }
+    });
+    
+    $('#form').on('submit', function (e) {
+
+        // if the validator does not prevent form submit
+        if (!e.isDefaultPrevented()) {
+            e.preventDefault();
+    var formData = new FormData(this);
+    $.notify({
+            	icon: 'pe-7s-hourglass',
+            	message: "Please wait while the photos are processed."
+
+            },{
+                type: 'success',
+                timer: 1000
+            });
+
+
+    $.ajax({
+     type: "POST",
+     url: "file_upload",
+     //url: $(this).attr('action'),
+     //data: $('#form').serialize(),
+     data: formData,
+     cache: false,
+     contentType: false,
+     processData: false,
+             success: function(msg){
+                      //alert(msg);
+                      $('#form')[0].reset();
+                      $('#img-upload').attr('src', '');
+                      $('#user_photos').html(msg);
+             },
+     error: function(){
+     alert("failure");
+     }
+           });
+       $("#myModalNorm").modal('hide');
+        }
+    });
+
+    $("#clear_btn").click(function(){
+     $('#img-upload').attr('src', '');
+    });
+    }); 
+
+    </script>
+
+</html>
