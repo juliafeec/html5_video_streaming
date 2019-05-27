@@ -1,3 +1,7 @@
+## Architecture Diagram:
+
+![](ArchitectureDiagram.png?raw=true)
+
 ## Documentation:
 
 https://msds698.github.io/Pelicam/
